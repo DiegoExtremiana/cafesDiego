@@ -101,7 +101,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {FEATURES.map((feature, index) => (
               <div
                 key={feature.title}

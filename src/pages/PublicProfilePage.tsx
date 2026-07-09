@@ -13,6 +13,7 @@ import {
   Sun,
   Trophy,
   Zap,
+  ZapOff,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ import { Brand } from '@/components/layout/Brand';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
+import { CoffeeTypeIcon } from '@/components/coffee/CoffeeTypeIcon';
 import { SeriesChart } from '@/components/charts/SeriesChart';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
 import { chartColors } from '@/components/charts/theme';
@@ -34,7 +36,7 @@ import { dailySeries, hourlyDistribution, monthlySeries } from '@/utils/chartDat
 import { formatDate, formatDuration, formatTime, formatWeekdayName } from '@/utils/dates';
 import { coffeeLabel, formatInteger, formatNumber } from '@/utils/format';
 import type { Profile } from '@/types/profile';
-import type { Coffee } from '@/types/coffee';
+import { COFFEE_TYPE_LABELS, type Coffee } from '@/types/coffee';
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'error';
 type Section = 'hoy' | 'semana' | 'general';
@@ -87,6 +89,10 @@ export default function PublicProfilePage() {
 
   const today = useMemo(() => computeTodayStats(coffees, now), [coffees, now]);
   const todayCoffees = useMemo(() => coffeesOfDay(coffees, now), [coffees, now]);
+  const todayCaffeineCount = useMemo(
+    () => todayCoffees.filter((coffee) => coffee.hasCaffeine).length,
+    [todayCoffees],
+  );
   const week = useMemo(() => computeWeekStats(coffees, now), [coffees, now]);
   const weekly7 = useMemo(() => dailySeries(coffees, now, 7), [coffees, now]);
   const historic = useMemo(() => computeHistoricStats(coffees, profile), [coffees, profile]);
@@ -231,16 +237,38 @@ export default function PublicProfilePage() {
             {profile.showHistory &&
               (todayCoffees.length > 0 ? (
                 <Card>
-                  <CardHeader title="Cafés de hoy" icon={<History className="size-4" aria-hidden />} />
+                  <CardHeader
+                    title="Cafés de hoy"
+                    subtitle={`${todayCaffeineCount} con cafeína · ${todayCoffees.length - todayCaffeineCount} sin cafeína`}
+                    icon={<History className="size-4" aria-hidden />}
+                  />
                   <ul className="divide-y divide-coffee-100">
                     {todayCoffees.map((coffee) => (
-                      <li key={coffee.id} className="flex items-center gap-3 py-2.5">
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-coffee-100 text-coffee-600">
-                          <CoffeeIcon className="size-4" aria-hidden />
-                        </span>
-                        <span className="text-sm font-medium tabular-nums text-coffee-900">
-                          {formatTime(coffee.takenAt)}
-                        </span>
+                      <li key={coffee.id} className="flex items-center justify-between gap-3 py-2.5">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-8 items-center justify-center rounded-lg bg-coffee-100 text-coffee-600">
+                            <CoffeeTypeIcon type={coffee.type} className="size-4" />
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium tabular-nums text-coffee-900">
+                              {formatTime(coffee.takenAt)}
+                            </p>
+                            <p className="text-xs text-coffee-400">
+                              {COFFEE_TYPE_LABELS[coffee.type]}
+                            </p>
+                          </div>
+                        </div>
+                        {coffee.hasCaffeine ? (
+                          <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                            <Zap className="size-3.5" aria-hidden />
+                            Con cafeína
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs font-medium text-coffee-400">
+                            <ZapOff className="size-3.5" aria-hidden />
+                            Sin cafeína
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
