@@ -123,3 +123,20 @@ create policy "coffees_update_own"
 create policy "coffees_delete_own"
   on public.coffees for delete
   using (auth.uid() = user_id);
+
+-- -------------------------------------------------------------
+-- RPC: eliminar la cuenta del usuario autenticado
+-- Borra auth.users; profiles y coffees caen en cascada por FK.
+-- -------------------------------------------------------------
+create or replace function public.delete_user_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.delete_user_account() to authenticated;

@@ -32,6 +32,7 @@ export interface AuthContextValue {
   ) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
   updateProfile: (settings: Partial<ProfileSettings>) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -117,6 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  const deleteAccount = useCallback(async () => {
+    const { error } = await supabase.rpc('delete_user_account');
+    if (error) throw new Error(`No se pudo eliminar la cuenta: ${error.message}`);
+    await supabase.auth.signOut();
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -127,8 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       updateProfile,
+      deleteAccount,
     }),
-    [session, profile, loading, signIn, signUp, signOut, updateProfile],
+    [session, profile, loading, signIn, signUp, signOut, updateProfile, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

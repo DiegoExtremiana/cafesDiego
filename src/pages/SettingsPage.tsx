@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  AlertTriangle,
   Briefcase,
   Check,
   Copy,
@@ -7,6 +9,7 @@ import {
   FileJson,
   FileSpreadsheet,
   Globe,
+  Trash2,
   User,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -15,6 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Toggle } from '@/components/ui/Toggle';
 import { Spinner } from '@/components/ui/Spinner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { WorkDaysSelector } from '@/components/settings/WorkDaysSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
@@ -23,8 +27,9 @@ import { exportToCsv, exportToJson } from '@/utils/export';
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
 
 export default function SettingsPage() {
-  const { profile, updateProfile } = useAuth();
+  const { profile, updateProfile, deleteAccount } = useAuth();
   const { coffees } = useCoffees();
+  const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -42,6 +47,9 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Carga los valores actuales del perfil en el formulario.
   useEffect(() => {
@@ -118,156 +126,207 @@ export default function SettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleting) return;
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.');
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  };
+
   return (
-    <div className="flex max-w-2xl flex-col gap-5 animate-fade-in">
+    <div className="flex max-w-5xl flex-col gap-5 animate-fade-in">
       <h1 className="text-xl font-bold text-coffee-900">Ajustes</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <Card>
-          <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
-          <div className="flex flex-col gap-4">
-            <Input
-              label="Nombre"
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Diego"
-            />
-            <Input
-              label="Nombre de usuario"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              hint="Forma parte de la URL de tu perfil público."
-            />
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title="Jornada laboral"
-            subtitle="Se usa para calcular las horas trabajadas y tu ritmo"
-            icon={<Briefcase className="size-4" aria-hidden />}
-          />
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <form onSubmit={handleSubmit} className="contents">
+          <Card>
+            <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
+            <div className="flex flex-col gap-4">
               <Input
-                label="Hora de entrada"
-                type="time"
-                value={workStart}
-                onChange={(event) => setWorkStart(event.target.value)}
-                required
+                label="Nombre"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                placeholder="Diego"
               />
               <Input
-                label="Hora de salida"
-                type="time"
-                value={workEnd}
-                onChange={(event) => setWorkEnd(event.target.value)}
-                required
+                label="Nombre de usuario"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                hint="Forma parte de la URL de tu perfil público."
               />
             </div>
-            <WorkDaysSelector value={workDays} onChange={setWorkDays} />
-            <Input
-              label="Máximo recomendado de cafés al día"
-              type="number"
-              min={1}
-              max={20}
-              value={maxCoffees}
-              onChange={(event) => setMaxCoffees(event.target.value)}
-              placeholder="Sin límite"
-              hint="Déjalo vacío si no quieres un límite."
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Jornada laboral"
+              subtitle="Se usa para calcular las horas trabajadas y tu ritmo"
+              icon={<Briefcase className="size-4" aria-hidden />}
             />
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Hora de entrada"
+                  type="time"
+                  value={workStart}
+                  onChange={(event) => setWorkStart(event.target.value)}
+                  required
+                />
+                <Input
+                  label="Hora de salida"
+                  type="time"
+                  value={workEnd}
+                  onChange={(event) => setWorkEnd(event.target.value)}
+                  required
+                />
+              </div>
+              <WorkDaysSelector value={workDays} onChange={setWorkDays} />
+              <Input
+                label="Máximo recomendado de cafés al día"
+                type="number"
+                min={1}
+                max={20}
+                value={maxCoffees}
+                onChange={(event) => setMaxCoffees(event.target.value)}
+                placeholder="Sin límite"
+                hint="Déjalo vacío si no quieres un límite."
+              />
+            </div>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader
+              title="Perfil público"
+              subtitle="Comparte tus estadísticas con quien quieras"
+              icon={<Globe className="size-4" aria-hidden />}
+            />
+            <div className="flex flex-col gap-1">
+              <Toggle
+                checked={isPublic}
+                onChange={setIsPublic}
+                label="Activar perfil público"
+                description="Cualquiera con el enlace podrá ver tus estadísticas, sin poder editarlas."
+              />
+              <Toggle
+                checked={showHistory}
+                onChange={setShowHistory}
+                label="Mostrar historial de cafés"
+                disabled={!isPublic}
+              />
+              <Toggle
+                checked={showCharts}
+                onChange={setShowCharts}
+                label="Mostrar gráficos"
+                disabled={!isPublic}
+              />
+              <Toggle
+                checked={showAchievements}
+                onChange={setShowAchievements}
+                label="Mostrar logros"
+                disabled={!isPublic}
+              />
+              <Toggle
+                checked={showAdvancedStats}
+                onChange={setShowAdvancedStats}
+                label="Mostrar estadísticas avanzadas"
+                disabled={!isPublic}
+              />
+              {isPublic && (
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-coffee-50 px-3 py-2">
+                  <code className="min-w-0 flex-1 truncate text-xs text-coffee-700">{publicUrl}</code>
+                  <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
+                    {copied ? (
+                      <Check className="size-3.5 text-emerald-600" aria-hidden />
+                    ) : (
+                      <Copy className="size-3.5" aria-hidden />
+                    )}
+                    {copied ? 'Copiado' : 'Copiar'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <div className="flex flex-col gap-5 lg:col-span-2">
+            {error && <Alert variant="error">{error}</Alert>}
+            {saved && <Alert variant="success">Ajustes guardados correctamente.</Alert>}
+            <div>
+              <Button type="submit" size="lg" loading={saving}>
+                Guardar cambios
+              </Button>
+            </div>
           </div>
-        </Card>
+        </form>
 
         <Card>
           <CardHeader
-            title="Perfil público"
-            subtitle="Comparte tus estadísticas con quien quieras"
-            icon={<Globe className="size-4" aria-hidden />}
+            title="Exportar datos"
+            subtitle={`${coffees.length} cafés registrados`}
+            icon={<Download className="size-4" aria-hidden />}
           />
-          <div className="flex flex-col gap-1">
-            <Toggle
-              checked={isPublic}
-              onChange={setIsPublic}
-              label="Activar perfil público"
-              description="Cualquiera con el enlace podrá ver tus estadísticas, sin poder editarlas."
-            />
-            <Toggle
-              checked={showHistory}
-              onChange={setShowHistory}
-              label="Mostrar historial de cafés"
-              disabled={!isPublic}
-            />
-            <Toggle
-              checked={showCharts}
-              onChange={setShowCharts}
-              label="Mostrar gráficos"
-              disabled={!isPublic}
-            />
-            <Toggle
-              checked={showAchievements}
-              onChange={setShowAchievements}
-              label="Mostrar logros"
-              disabled={!isPublic}
-            />
-            <Toggle
-              checked={showAdvancedStats}
-              onChange={setShowAdvancedStats}
-              label="Mostrar estadísticas avanzadas"
-              disabled={!isPublic}
-            />
-            {isPublic && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-coffee-50 px-3 py-2">
-                <code className="min-w-0 flex-1 truncate text-xs text-coffee-700">{publicUrl}</code>
-                <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
-                  {copied ? (
-                    <Check className="size-3.5 text-emerald-600" aria-hidden />
-                  ) : (
-                    <Copy className="size-3.5" aria-hidden />
-                  )}
-                  {copied ? 'Copiado' : 'Copiar'}
-                </Button>
-              </div>
-            )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => exportToCsv(coffees)}
+              disabled={coffees.length === 0}
+            >
+              <FileSpreadsheet className="size-4" aria-hidden />
+              Exportar CSV
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => exportToJson(coffees)}
+              disabled={coffees.length === 0}
+            >
+              <FileJson className="size-4" aria-hidden />
+              Exportar JSON
+            </Button>
           </div>
         </Card>
 
-        {error && <Alert variant="error">{error}</Alert>}
-        {saved && <Alert variant="success">Ajustes guardados correctamente.</Alert>}
+        <Card className="border-red-200">
+          <CardHeader
+            title="Eliminar cuenta"
+            subtitle="Esta acción no se puede deshacer"
+            icon={<AlertTriangle className="size-4 text-red-500" aria-hidden />}
+          />
+          <div className="flex flex-col gap-3">
+            {deleteError && <Alert variant="error">{deleteError}</Alert>}
+            <p className="text-sm text-coffee-500">
+              Se borrarán tu perfil, tu historial de cafés y todos tus datos asociados de forma
+              permanente.
+            </p>
+            <div>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={() => setConfirmingDelete(true)}
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Eliminar mi cuenta
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
 
-        <div>
-          <Button type="submit" size="lg" loading={saving}>
-            Guardar cambios
-          </Button>
-        </div>
-      </form>
-
-      <Card>
-        <CardHeader
-          title="Exportar datos"
-          subtitle={`${coffees.length} cafés registrados`}
-          icon={<Download className="size-4" aria-hidden />}
-        />
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => exportToCsv(coffees)}
-            disabled={coffees.length === 0}
-          >
-            <FileSpreadsheet className="size-4" aria-hidden />
-            Exportar CSV
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => exportToJson(coffees)}
-            disabled={coffees.length === 0}
-          >
-            <FileJson className="size-4" aria-hidden />
-            Exportar JSON
-          </Button>
-        </div>
-      </Card>
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Eliminar cuenta"
+        message="Vas a borrar tu cuenta y todos tus datos de forma permanente. Esta acción no se puede deshacer. ¿Quieres continuar?"
+        confirmLabel={deleting ? 'Eliminando...' : 'Eliminar cuenta'}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </div>
   );
 }
