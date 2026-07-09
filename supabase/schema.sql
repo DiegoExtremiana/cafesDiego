@@ -153,3 +153,36 @@ end;
 $$;
 
 grant execute on function public.delete_user_account() to authenticated;
+
+-- -------------------------------------------------------------
+-- RPC: comprobar disponibilidad de usuario/correo antes de registrarse
+-- security definer: sortea la RLS de profiles (perfiles privados) y
+-- permite leer auth.users, que no es accesible desde el cliente.
+-- -------------------------------------------------------------
+create or replace function public.username_available(check_username text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select not exists (
+    select 1 from public.profiles where username = lower(check_username)
+  );
+$$;
+
+grant execute on function public.username_available(text) to anon, authenticated;
+
+create or replace function public.email_registered(check_email text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from auth.users where lower(email) = lower(check_email)
+  );
+$$;
+
+grant execute on function public.email_registered(text) to anon, authenticated;

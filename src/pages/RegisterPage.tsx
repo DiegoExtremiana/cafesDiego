@@ -1,13 +1,56 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { Check, Loader2, UserPlus, X } from 'lucide-react';
 import { AuthShell } from '@/components/layout/AuthShell';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
+import { isEmailRegistered, isUsernameAvailable } from '@/services/availabilityService';
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CHECK_DEBOUNCE_MS = 500;
+
+type AvailabilityStatus = 'idle' | 'checking' | 'available' | 'taken';
+
+function AvailabilityHint({ status, takenMessage, availableMessage }: {
+  status: AvailabilityStatus;
+  takenMessage: string;
+  availableMessage: string;
+}) {
+  if (status === 'idle') return null;
+  return (
+    <p
+      className={`flex items-center gap-1.5 text-xs ${
+        status === 'available'
+          ? 'text-emerald-600'
+          : status === 'taken'
+            ? 'text-red-600'
+            : 'text-coffee-400'
+      }`}
+    >
+      {status === 'checking' && (
+        <>
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+          Comprobando disponibilidad...
+        </>
+      )}
+      {status === 'available' && (
+        <>
+          <Check className="size-3.5" aria-hidden />
+          {availableMessage}
+        </>
+      )}
+      {status === 'taken' && (
+        <>
+          <X className="size-3.5" aria-hidden />
+          {takenMessage}
+        </>
+      )}
+    </p>
+  );
+}
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
@@ -20,6 +63,49 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [usernameStatus, setUsernameStatus] = useState<AvailabilityStatus>('idle');
+  const [emailStatus, setEmailStatus] = useState<AvailabilityStatus>('idle');
+  const usernameCheckId = useRef(0);
+  const emailCheckId = useRef(0);
+
+  useEffect(() => {
+    const normalized = username.trim().toLowerCase();
+    if (!USERNAME_PATTERN.test(normalized)) {
+      setUsernameStatus('idle');
+      return;
+    }
+    setUsernameStatus('checking');
+    const id = ++usernameCheckId.current;
+    const timer = setTimeout(async () => {
+      try {
+        const available = await isUsernameAvailable(normalized);
+        if (usernameCheckId.current === id) setUsernameStatus(available ? 'available' : 'taken');
+      } catch {
+        if (usernameCheckId.current === id) setUsernameStatus('idle');
+      }
+    }, CHECK_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [username]);
+
+  useEffect(() => {
+    const normalized = email.trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      setEmailStatus('idle');
+      return;
+    }
+    setEmailStatus('checking');
+    const id = ++emailCheckId.current;
+    const timer = setTimeout(async () => {
+      try {
+        const registered = await isEmailRegistered(normalized);
+        if (emailCheckId.current === id) setEmailStatus(registered ? 'taken' : 'available');
+      } catch {
+        if (emailCheckId.current === id) setEmailStatus('idle');
+      }
+    }, CHECK_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -76,6 +162,8 @@ export default function RegisterPage() {
     );
   }
 
+  const blocked = usernameStatus === 'taken' || emailStatus === 'taken';
+
   return (
     <AuthShell>
       <h1 className="mb-1 text-lg font-bold text-coffee-900">Crear cuenta</h1>
@@ -89,24 +177,38 @@ export default function RegisterPage() {
           autoComplete="name"
           required
         />
-        <Input
-          label="Nombre de usuario"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          placeholder="diegoextremiana"
-          hint="Será la URL de tu perfil público: /u/tu-usuario"
-          autoComplete="username"
-          required
-        />
-        <Input
-          label="Correo electrónico"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="tu@correo.com"
-          autoComplete="email"
-          required
-        />
+        <div className="flex flex-col gap-1.5">
+          <Input
+            label="Nombre de usuario"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="diegoextremiana"
+            hint="Será la URL de tu perfil público: /u/tu-usuario"
+            autoComplete="username"
+            required
+          />
+          <AvailabilityHint
+            status={usernameStatus}
+            takenMessage="Ese nombre de usuario ya está en uso"
+            availableMessage="Nombre de usuario disponible"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Input
+            label="Correo electrónico"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="tu@correo.com"
+            autoComplete="email"
+            required
+          />
+          <AvailabilityHint
+            status={emailStatus}
+            takenMessage="Ya existe una cuenta con este correo"
+            availableMessage="Correo disponible"
+          />
+        </div>
         <Input
           label="Contraseña"
           type="password"
@@ -126,7 +228,7 @@ export default function RegisterPage() {
           required
         />
         {error && <Alert variant="error">{error}</Alert>}
-        <Button type="submit" size="lg" loading={submitting}>
+        <Button type="submit" size="lg" loading={submitting} disabled={blocked}>
           {!submitting && <UserPlus className="size-4" aria-hidden />}
           Crear cuenta
         </Button>

@@ -72,6 +72,14 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: void;
       };
+      username_available: {
+        Args: { check_username: string };
+        Returns: boolean;
+      };
+      email_registered: {
+        Args: { check_email: string };
+        Returns: boolean;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
