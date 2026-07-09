@@ -21,7 +21,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signIn(email.trim(), password);
-      navigate('/', { replace: true });
+      navigate('/panel', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado al iniciar sesión.');
     } finally {

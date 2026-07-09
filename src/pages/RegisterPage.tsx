@@ -52,7 +52,7 @@ export default function RegisterPage() {
       if (needsEmailConfirmation) {
         setPendingConfirmation(true);
       } else {
-        navigate('/', { replace: true });
+        navigate('/panel', { replace: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado al crear la cuenta.');

@@ -11,7 +11,7 @@ import { Brand } from './Brand';
 import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
-  { to: '/', label: 'Panel', icon: LayoutDashboard },
+  { to: '/panel', label: 'Panel', icon: LayoutDashboard },
   { to: '/historial', label: 'Historial', icon: History },
   { to: '/estadisticas', label: 'Estadísticas', icon: BarChart3 },
   { to: '/logros', label: 'Logros', icon: Trophy },
@@ -40,7 +40,7 @@ export function AppLayout() {
           <Brand />
           <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
             {navItems.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => navLinkClass(isActive)}>
+              <NavLink key={to} to={to} className={({ isActive }) => navLinkClass(isActive)}>
                 <Icon className="size-4" aria-hidden />
                 {label}
               </NavLink>

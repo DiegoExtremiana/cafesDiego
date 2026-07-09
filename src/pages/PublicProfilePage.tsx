@@ -120,7 +120,7 @@ export default function PublicProfilePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Brand />
           <Link
-            to="/login"
+            to="/"
             className="text-sm font-medium text-coffee-500 underline-offset-2 hover:underline"
           >
             Crea tu contador

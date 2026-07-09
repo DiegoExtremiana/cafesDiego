@@ -25,5 +25,5 @@ export function PublicOnlyRoute() {
       </main>
     );
   }
-  return session ? <Navigate to="/" replace /> : <Outlet />;
+  return session ? <Navigate to="/panel" replace /> : <Outlet />;
 }
