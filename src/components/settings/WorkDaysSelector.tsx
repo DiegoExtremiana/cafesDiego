@@ -26,7 +26,7 @@ export function WorkDaysSelector({ value, onChange }: WorkDaysSelectorProps) {
   return (
     <div>
       <span className="mb-1.5 block text-sm font-medium text-coffee-800">Días laborables</span>
-      <div className="flex gap-1.5">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {DAYS.map((day) => {
           const selected = value.includes(day.value);
           return (
@@ -37,7 +37,7 @@ export function WorkDaysSelector({ value, onChange }: WorkDaysSelectorProps) {
               aria-pressed={selected}
               aria-label={day.name}
               title={day.name}
-              className={`size-9 rounded-xl text-sm font-medium transition-colors ${
+              className={`aspect-square w-full min-w-0 rounded-xl text-sm font-medium transition-colors ${
                 selected
                   ? 'bg-coffee-600 text-white shadow-sm'
                   : 'bg-coffee-100 text-coffee-500 hover:bg-coffee-200'
