@@ -11,6 +11,7 @@ function mapProfile(row: ProfileRow): Profile {
     workEnd: row.work_end.slice(0, 5),
     workDays: row.work_days,
     maxDailyCoffees: row.max_daily_coffees,
+    maxDailyCaffeine: row.max_daily_caffeine,
     isPublic: row.is_public,
     showHistory: row.show_history,
     showCharts: row.show_charts,
@@ -53,6 +54,8 @@ export async function updateProfile(
   if (settings.workEnd !== undefined) update.work_end = settings.workEnd;
   if (settings.workDays !== undefined) update.work_days = settings.workDays;
   if (settings.maxDailyCoffees !== undefined) update.max_daily_coffees = settings.maxDailyCoffees;
+  if (settings.maxDailyCaffeine !== undefined)
+    update.max_daily_caffeine = settings.maxDailyCaffeine;
   if (settings.isPublic !== undefined) update.is_public = settings.isPublic;
   if (settings.showHistory !== undefined) update.show_history = settings.showHistory;
   if (settings.showCharts !== undefined) update.show_charts = settings.showCharts;

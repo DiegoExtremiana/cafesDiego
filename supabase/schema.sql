@@ -16,6 +16,8 @@ create table public.profiles (
   work_days smallint[] not null default '{1,2,3,4,5}',
   -- Máximo recomendado de cafés al día (null = sin límite configurado)
   max_daily_coffees smallint check (max_daily_coffees is null or max_daily_coffees > 0),
+  -- Máximo recomendado de cafés con cafeína al día (null = sin límite configurado)
+  max_daily_caffeine smallint check (max_daily_caffeine is null or max_daily_caffeine > 0),
   -- Perfil público y flags de privacidad
   is_public boolean not null default false,
   show_history boolean not null default true,
@@ -127,6 +129,13 @@ create policy "coffees_update_own"
 create policy "coffees_delete_own"
   on public.coffees for delete
   using (auth.uid() = user_id);
+
+-- -------------------------------------------------------------
+-- Migración: límite diario de cafés con cafeína (proyecto ya creado)
+-- -------------------------------------------------------------
+alter table public.profiles
+  add column max_daily_caffeine smallint
+    check (max_daily_caffeine is null or max_daily_caffeine > 0);
 
 -- -------------------------------------------------------------
 -- RPC: eliminar la cuenta del usuario autenticado

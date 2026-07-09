@@ -13,6 +13,7 @@ export type ProfileRow = {
   work_end: string;
   work_days: number[];
   max_daily_coffees: number | null;
+  max_daily_caffeine: number | null;
   is_public: boolean;
   show_history: boolean;
   show_charts: boolean;

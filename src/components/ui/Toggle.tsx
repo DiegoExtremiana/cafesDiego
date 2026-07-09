@@ -1,19 +1,81 @@
+import type { ReactNode } from 'react';
+
 interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label: string;
   description?: string;
   disabled?: boolean;
+  /** Texto que sustituye a `label` cuando está activado; anima el cambio con `inactiveLabel`. */
+  activeLabel?: string;
+  /** Texto que sustituye a `label` cuando está desactivado. */
+  inactiveLabel?: string;
+  /** Icono que sustituye al activar; se transforma con `inactiveIcon` al cambiar de estado. */
+  activeIcon?: ReactNode;
+  /** Icono que se muestra al desactivar. */
+  inactiveIcon?: ReactNode;
 }
 
-export function Toggle({ checked, onChange, label, description, disabled = false }: ToggleProps) {
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  description,
+  disabled = false,
+  activeLabel,
+  inactiveLabel,
+  activeIcon,
+  inactiveIcon,
+}: ToggleProps) {
+  const hasLabelSwap = activeLabel !== undefined && inactiveLabel !== undefined;
+  const hasIconSwap = activeIcon !== undefined && inactiveIcon !== undefined;
+
   return (
     <label
       className={`flex items-center justify-between gap-4 py-2 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
     >
-      <span>
-        <span className="block text-sm font-medium text-coffee-900">{label}</span>
-        {description && <span className="block text-xs text-coffee-400">{description}</span>}
+      <span className="flex items-center gap-2.5">
+        {hasIconSwap && (
+          <span className="relative inline-flex size-5 shrink-0 items-center justify-center text-coffee-500">
+            <span
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                checked ? 'rotate-0 opacity-100' : 'rotate-180 opacity-0'
+              }`}
+            >
+              {activeIcon}
+            </span>
+            <span
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+                checked ? '-rotate-180 opacity-0' : 'rotate-0 opacity-100'
+              }`}
+            >
+              {inactiveIcon}
+            </span>
+          </span>
+        )}
+        <span>
+          {hasLabelSwap ? (
+            <span className="relative block h-5 overflow-hidden text-sm font-medium text-coffee-900">
+              <span
+                className={`absolute inset-0 transition-all duration-300 ${
+                  checked ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+                }`}
+              >
+                {activeLabel}
+              </span>
+              <span
+                className={`absolute inset-0 transition-all duration-300 ${
+                  checked ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+                }`}
+              >
+                {inactiveLabel}
+              </span>
+            </span>
+          ) : (
+            <span className="block text-sm font-medium text-coffee-900">{label}</span>
+          )}
+          {description && <span className="block text-xs text-coffee-400">{description}</span>}
+        </span>
       </span>
       <button
         type="button"

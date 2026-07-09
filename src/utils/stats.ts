@@ -122,6 +122,7 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
 
   return {
     todayCount: today.length,
+    todayCaffeineCount: today.filter((coffee) => coffee.hasCaffeine).length,
     lastCoffee,
     minutesSinceLast: lastCoffee ? minutesBetween(lastCoffee.takenAt, now) : null,
     todayAvgIntervalMinutes: todayAvgInterval,

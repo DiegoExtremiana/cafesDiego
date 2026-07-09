@@ -11,6 +11,8 @@ export interface Profile {
   workDays: number[];
   /** Máximo recomendado de cafés al día; null si no está configurado. */
   maxDailyCoffees: number | null;
+  /** Máximo recomendado de cafés con cafeína al día; null si no está configurado. */
+  maxDailyCaffeine: number | null;
   isPublic: boolean;
   showHistory: boolean;
   showCharts: boolean;

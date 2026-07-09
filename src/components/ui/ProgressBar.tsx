@@ -8,7 +8,7 @@ interface ProgressBarProps {
 export function ProgressBar({ value, max, label }: ProgressBarProps) {
   const ratio = max > 0 ? Math.min(value / max, 1) : 0;
   const color =
-    ratio < 0.7 ? 'bg-emerald-500' : ratio < 1 ? 'bg-amber-500' : 'bg-red-500';
+    ratio < 0.5 ? 'bg-emerald-500' : ratio <= 0.75 ? 'bg-amber-500' : 'bg-red-500';
   return (
     <div>
       {label && (

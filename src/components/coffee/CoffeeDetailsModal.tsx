@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Zap, ZapOff } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
@@ -61,6 +62,10 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
           onChange={setHasCaffeine}
           label="Con cafeína"
           description="Desactiva si era descafeinado."
+          activeLabel="Con cafeína"
+          inactiveLabel="Sin cafeína"
+          activeIcon={<Zap className="size-4" aria-hidden />}
+          inactiveIcon={<ZapOff className="size-4" aria-hidden />}
         />
 
         <div className="flex justify-end gap-2">

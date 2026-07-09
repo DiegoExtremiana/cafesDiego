@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const [workEnd, setWorkEnd] = useState('14:00');
   const [workDays, setWorkDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [maxCoffees, setMaxCoffees] = useState('');
+  const [maxCaffeine, setMaxCaffeine] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
   const [showCharts, setShowCharts] = useState(true);
@@ -60,6 +61,7 @@ export default function SettingsPage() {
     setWorkEnd(profile.workEnd);
     setWorkDays(profile.workDays);
     setMaxCoffees(profile.maxDailyCoffees !== null ? String(profile.maxDailyCoffees) : '');
+    setMaxCaffeine(profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '');
     setIsPublic(profile.isPublic);
     setShowHistory(profile.showHistory);
     setShowCharts(profile.showCharts);
@@ -96,6 +98,11 @@ export default function SettingsPage() {
       setError('El máximo de cafés debe ser un número entero mayor que cero.');
       return;
     }
+    const parsedMaxCaffeine = maxCaffeine.trim() === '' ? null : Number(maxCaffeine);
+    if (parsedMaxCaffeine !== null && (!Number.isInteger(parsedMaxCaffeine) || parsedMaxCaffeine < 1)) {
+      setError('El máximo de cafés con cafeína debe ser un número entero mayor que cero.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -106,6 +113,7 @@ export default function SettingsPage() {
         workEnd,
         workDays,
         maxDailyCoffees: parsedMax,
+        maxDailyCaffeine: parsedMaxCaffeine,
         isPublic,
         showHistory,
         showCharts,
@@ -197,6 +205,16 @@ export default function SettingsPage() {
                 onChange={(event) => setMaxCoffees(event.target.value)}
                 placeholder="Sin límite"
                 hint="Déjalo vacío si no quieres un límite."
+              />
+              <Input
+                label="Máximo recomendado de cafés con cafeína al día"
+                type="number"
+                min={1}
+                max={20}
+                value={maxCaffeine}
+                onChange={(event) => setMaxCaffeine(event.target.value)}
+                placeholder="Sin límite"
+                hint="Solo cuenta los cafés marcados como 'con cafeína'. Déjalo vacío si no quieres un límite."
               />
             </div>
           </Card>

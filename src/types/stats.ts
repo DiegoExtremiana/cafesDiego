@@ -9,6 +9,8 @@ export interface DayCount {
 /** Datos en vivo del panel principal. */
 export interface DashboardStats {
   todayCount: number;
+  /** Cafés de hoy que tenían cafeína. */
+  todayCaffeineCount: number;
   lastCoffee: Coffee | null;
   /** Minutos desde el último café (de cualquier día). */
   minutesSinceLast: number | null;

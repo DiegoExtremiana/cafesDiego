@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Coffee as CoffeeIcon, Pencil, Trash2 } from 'lucide-react';
+import { Coffee as CoffeeIcon, Pencil, Trash2, Zap, ZapOff } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Toggle } from '@/components/ui/Toggle';
 import { CoffeeTypeIcon } from './CoffeeTypeIcon';
@@ -113,6 +113,10 @@ export function CoffeeList({ coffees, onEdit, onDelete, onUpdateDetails }: Coffe
                     handleUpdate(coffee, { type: coffee.type, hasCaffeine: checked })
                   }
                   label="Con cafeína"
+                  activeLabel="Con cafeína"
+                  inactiveLabel="Sin cafeína"
+                  activeIcon={<Zap className="size-4" aria-hidden />}
+                  inactiveIcon={<ZapOff className="size-4" aria-hidden />}
                 />
               </div>
             </div>
