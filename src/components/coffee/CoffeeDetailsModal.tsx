@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
+import { CoffeeTypeIcon } from './CoffeeTypeIcon';
 import { COFFEE_TYPES, COFFEE_TYPE_LABELS, type CoffeeDetails, type CoffeeType } from '@/types/coffee';
 
 interface CoffeeDetailsModalProps {
@@ -42,12 +43,13 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
                 key={value}
                 type="button"
                 onClick={() => setType(value)}
-                className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
                   type === value
                     ? 'border-coffee-600 bg-coffee-50 text-coffee-900'
                     : 'border-coffee-200 text-coffee-600 hover:bg-coffee-50'
                 }`}
               >
+                <CoffeeTypeIcon type={value} className="size-5" />
                 {COFFEE_TYPE_LABELS[value]}
               </button>
             ))}

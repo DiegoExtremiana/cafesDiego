@@ -23,11 +23,11 @@ import { useNow } from '@/hooks/useNow';
 import { computeDashboardStats, coffeesOfDay } from '@/utils/stats';
 import { formatDuration, formatTime, formatDateLong } from '@/utils/dates';
 import { coffeeLabel, formatNumber } from '@/utils/format';
-import type { Coffee } from '@/types/coffee';
+import type { Coffee, CoffeeDetails } from '@/types/coffee';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
-  const { coffees, loading, error, editCoffee, removeCoffee } = useCoffees();
+  const { coffees, loading, error, editCoffee, updateCoffeeDetails, removeCoffee } = useCoffees();
   const now = useNow();
   const [editing, setEditing] = useState<Coffee | null>(null);
   const [deleting, setDeleting] = useState<Coffee | null>(null);
@@ -140,7 +140,14 @@ export default function DashboardPage() {
             </Link>
           }
         />
-        <CoffeeList coffees={todayCoffees} onEdit={setEditing} onDelete={setDeleting} />
+        <CoffeeList
+          coffees={todayCoffees}
+          onEdit={setEditing}
+          onDelete={setDeleting}
+          onUpdateDetails={(coffee: Coffee, details: CoffeeDetails) =>
+            updateCoffeeDetails(coffee.id, details)
+          }
+        />
       </Card>
 
       <CoffeeFormModal

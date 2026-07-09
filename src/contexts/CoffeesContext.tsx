@@ -20,6 +20,8 @@ export interface CoffeesContextValue {
   /** Añade un café en una fecha y hora concretas (registro manual). */
   addCoffee: (takenAt: Date, details?: CoffeeDetails) => Promise<void>;
   editCoffee: (id: string, takenAt: Date) => Promise<void>;
+  /** Actualiza tipo y cafeína al vuelo (usado por el slider del historial). */
+  updateCoffeeDetails: (id: string, details: CoffeeDetails) => Promise<void>;
   removeCoffee: (id: string) => Promise<void>;
 }
 
@@ -88,14 +90,33 @@ export function CoffeesProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const updateCoffeeDetails = useCallback(async (id: string, details: CoffeeDetails) => {
+    const updated = await coffeeService.updateCoffeeDetails(id, details);
+    setCoffees((current) =>
+      insertSorted(
+        current.filter((coffee) => coffee.id !== id),
+        updated,
+      ),
+    );
+  }, []);
+
   const removeCoffee = useCallback(async (id: string) => {
     await coffeeService.deleteCoffee(id);
     setCoffees((current) => current.filter((coffee) => coffee.id !== id));
   }, []);
 
   const value = useMemo<CoffeesContextValue>(
-    () => ({ coffees, loading, error, registerNow, addCoffee, editCoffee, removeCoffee }),
-    [coffees, loading, error, registerNow, addCoffee, editCoffee, removeCoffee],
+    () => ({
+      coffees,
+      loading,
+      error,
+      registerNow,
+      addCoffee,
+      editCoffee,
+      updateCoffeeDetails,
+      removeCoffee,
+    }),
+    [coffees, loading, error, registerNow, addCoffee, editCoffee, updateCoffeeDetails, removeCoffee],
   );
 
   return <CoffeesContext.Provider value={value}>{children}</CoffeesContext.Provider>;

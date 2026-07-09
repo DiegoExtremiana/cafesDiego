@@ -18,10 +18,11 @@ import {
   startOfDay,
   toDateKey,
 } from '@/utils/dates';
-import type { Coffee } from '@/types/coffee';
+import type { Coffee, CoffeeDetails } from '@/types/coffee';
 
 export default function HistoryPage() {
-  const { coffees, loading, error, addCoffee, editCoffee, removeCoffee } = useCoffees();
+  const { coffees, loading, error, addCoffee, editCoffee, updateCoffeeDetails, removeCoffee } =
+    useCoffees();
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Coffee | null>(null);
@@ -51,6 +52,9 @@ export default function HistoryPage() {
       await addCoffee(takenAt);
     }
   };
+
+  const handleUpdateDetails = (coffee: Coffee, details: CoffeeDetails) =>
+    updateCoffeeDetails(coffee.id, details);
 
   const handleDelete = async () => {
     if (!deleting) return;
@@ -123,7 +127,12 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        <CoffeeList coffees={dayCoffees} onEdit={openEdit} onDelete={setDeleting} />
+        <CoffeeList
+          coffees={dayCoffees}
+          onEdit={openEdit}
+          onDelete={setDeleting}
+          onUpdateDetails={handleUpdateDetails}
+        />
       </Card>
 
       <CoffeeFormModal

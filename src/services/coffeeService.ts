@@ -52,6 +52,18 @@ export async function updateCoffee(id: string, takenAt: Date): Promise<Coffee> {
   return mapCoffee(data);
 }
 
+/** Actualiza tipo y cafeína al vuelo, sin tocar la fecha/hora del registro. */
+export async function updateCoffeeDetails(id: string, details: CoffeeDetails): Promise<Coffee> {
+  const { data, error } = await supabase
+    .from('coffees')
+    .update({ type: details.type, has_caffeine: details.hasCaffeine })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(`No se pudo actualizar el café: ${error.message}`);
+  return mapCoffee(data);
+}
+
 export async function deleteCoffee(id: string): Promise<void> {
   const { error } = await supabase.from('coffees').delete().eq('id', id);
   if (error) throw new Error(`No se pudo eliminar el café: ${error.message}`);
