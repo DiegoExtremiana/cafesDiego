@@ -20,14 +20,17 @@ import { Alert } from '@/components/ui/Alert';
 import { Toggle } from '@/components/ui/Toggle';
 import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { AvailabilityHint, type AvailabilityStatus } from '@/components/ui/AvailabilityHint';
 import { WorkDaysSelector } from '@/components/settings/WorkDaysSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
+import { isUsernameAvailable } from '@/services/availabilityService';
 import { exportToCsv, exportToJson } from '@/utils/export';
 import type { ProfileSettings } from '@/types/profile';
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
 const SAVE_DEBOUNCE_MS = 700;
+const USERNAME_CHECK_DEBOUNCE_MS = 500;
 
 interface FieldSnapshot {
   displayName: string;
@@ -95,6 +98,10 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [usernameStatus, setUsernameStatus] = useState<AvailabilityStatus>('idle');
+  const usernameStatusRef = useRef<AvailabilityStatus>('idle');
+  const usernameCheckId = useRef(0);
+
   const snapshotRef = useRef('');
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -130,6 +137,36 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
+  // Comprueba en tiempo real que el nombre de usuario elegido esté libre (salvo que sea el actual).
+  useEffect(() => {
+    const normalized = username.trim().toLowerCase();
+    if (!USERNAME_PATTERN.test(normalized) || normalized === profile?.username) {
+      usernameStatusRef.current = 'idle';
+      setUsernameStatus('idle');
+      return;
+    }
+    usernameStatusRef.current = 'checking';
+    setUsernameStatus('checking');
+    const id = ++usernameCheckId.current;
+    const timer = setTimeout(async () => {
+      try {
+        const available = await isUsernameAvailable(normalized);
+        if (usernameCheckId.current === id) {
+          const next = available ? 'available' : 'taken';
+          usernameStatusRef.current = next;
+          setUsernameStatus(next);
+        }
+      } catch {
+        if (usernameCheckId.current === id) {
+          usernameStatusRef.current = 'idle';
+          setUsernameStatus('idle');
+        }
+      }
+    }, USERNAME_CHECK_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
+
   // Autoguardado: espera a que el usuario pare de escribir y guarda sin botón.
   useEffect(() => {
     const snapshot = serialize({
@@ -144,6 +181,11 @@ export default function SettingsPage() {
     if (snapshot === snapshotRef.current) return;
 
     const timer = setTimeout(async () => {
+      if (usernameStatusRef.current === 'taken') {
+        setStatus('error');
+        setErrorMessage('Ese nombre de usuario ya está en uso.');
+        return;
+      }
       const result = validateFields({
         displayName,
         username,
@@ -252,12 +294,19 @@ export default function SettingsPage() {
               onChange={(event) => setDisplayName(event.target.value)}
               placeholder="Diego"
             />
-            <Input
-              label="Nombre de usuario"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              hint="Forma parte de la URL de tu perfil público."
-            />
+            <div className="flex flex-col gap-1.5">
+              <Input
+                label="Nombre de usuario"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                hint="Forma parte de la URL de tu perfil público."
+              />
+              <AvailabilityHint
+                status={usernameStatus}
+                takenMessage="Ese nombre de usuario ya está en uso"
+                availableMessage="Nombre de usuario disponible"
+              />
+            </div>
           </div>
         </Card>
 

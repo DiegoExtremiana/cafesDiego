@@ -1,56 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, Loader2, UserPlus, X } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { AuthShell } from '@/components/layout/AuthShell';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
+import { AvailabilityHint, type AvailabilityStatus } from '@/components/ui/AvailabilityHint';
 import { useAuth } from '@/hooks/useAuth';
 import { isEmailRegistered, isUsernameAvailable } from '@/services/availabilityService';
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CHECK_DEBOUNCE_MS = 500;
-
-type AvailabilityStatus = 'idle' | 'checking' | 'available' | 'taken';
-
-function AvailabilityHint({ status, takenMessage, availableMessage }: {
-  status: AvailabilityStatus;
-  takenMessage: string;
-  availableMessage: string;
-}) {
-  if (status === 'idle') return null;
-  return (
-    <p
-      className={`flex items-center gap-1.5 text-xs ${
-        status === 'available'
-          ? 'text-emerald-600'
-          : status === 'taken'
-            ? 'text-red-600'
-            : 'text-coffee-400'
-      }`}
-    >
-      {status === 'checking' && (
-        <>
-          <Loader2 className="size-3.5 animate-spin" aria-hidden />
-          Comprobando disponibilidad...
-        </>
-      )}
-      {status === 'available' && (
-        <>
-          <Check className="size-3.5" aria-hidden />
-          {availableMessage}
-        </>
-      )}
-      {status === 'taken' && (
-        <>
-          <X className="size-3.5" aria-hidden />
-          {takenMessage}
-        </>
-      )}
-    </p>
-  );
-}
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
