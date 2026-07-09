@@ -25,6 +25,7 @@ import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
 import { CoffeeTypeIcon } from '@/components/coffee/CoffeeTypeIcon';
 import { SeriesChart } from '@/components/charts/SeriesChart';
+import { ExpandableChart } from '@/components/charts/ExpandableChart';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
 import { chartColors } from '@/components/charts/theme';
 import { getPublicProfile } from '@/services/profileService';
@@ -111,6 +112,10 @@ export default function PublicProfilePage() {
   const monthly = useMemo(() => monthlySeries(coffees, now), [coffees, now]);
   const hourly = useMemo(() => hourlyDistribution(coffees), [coffees]);
   const recentCoffees = useMemo(() => coffees.slice(-10).reverse(), [coffees]);
+
+  // Series completas (todo el histórico) para la vista ampliada de cada gráfico.
+  const dailyFull = useMemo(() => dailySeries(coffees, now, 'all'), [coffees, now]);
+  const monthlyFull = useMemo(() => monthlySeries(coffees, now, 'all'), [coffees, now]);
 
   if (state === 'loading') {
     return (
@@ -327,10 +332,14 @@ export default function PublicProfilePage() {
               />
             </div>
             {profile.showCharts && (
-              <Card>
-                <CardHeader title="Últimos 7 días" icon={<LineChart className="size-4" aria-hidden />} />
+              <ExpandableChart
+                title="Últimos 7 días"
+                icon={<LineChart className="size-4" aria-hidden />}
+                expanded={<SeriesChart data={dailyFull} type="bar" height={320} tickInterval={6} />}
+                expandedMinWidth={Math.max(700, dailyFull.length * 26)}
+              >
                 <SeriesChart data={weekly7} type="bar" />
-              </Card>
+              </ExpandableChart>
             )}
           </>
         )}
@@ -380,29 +389,35 @@ export default function PublicProfilePage() {
             {profile.showCharts && (
               <>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <Card>
-                    <CardHeader
-                      title="Evolución diaria"
-                      subtitle="Últimos 30 días"
-                      icon={<LineChart className="size-4" aria-hidden />}
-                    />
+                  <ExpandableChart
+                    title="Evolución diaria"
+                    subtitle="Últimos 30 días"
+                    icon={<LineChart className="size-4" aria-hidden />}
+                    expanded={<SeriesChart data={dailyFull} type="area" height={320} tickInterval={6} />}
+                    expandedMinWidth={Math.max(700, dailyFull.length * 26)}
+                  >
                     <SeriesChart data={daily} type="area" />
-                  </Card>
-                  <Card>
-                    <CardHeader
-                      title="Cafés por hora del día"
-                      icon={<Clock className="size-4" aria-hidden />}
-                    />
+                  </ExpandableChart>
+                  <ExpandableChart
+                    title="Cafés por hora del día"
+                    icon={<Clock className="size-4" aria-hidden />}
+                    expanded={<SeriesChart data={hourly} tickInterval={0} height={320} />}
+                    expandedMinWidth={hourly.length * 34}
+                  >
                     <SeriesChart data={hourly} tickInterval={2} />
-                  </Card>
-                  <Card className="lg:col-span-2">
-                    <CardHeader
-                      title="Evolución mensual"
-                      subtitle="Últimos 12 meses"
-                      icon={<BarChart3 className="size-4" aria-hidden />}
-                    />
+                  </ExpandableChart>
+                  <ExpandableChart
+                    title="Evolución mensual"
+                    subtitle="Últimos 12 meses"
+                    icon={<BarChart3 className="size-4" aria-hidden />}
+                    className="lg:col-span-2"
+                    expanded={
+                      <SeriesChart data={monthlyFull} tickInterval={0} color={chartColors.coffeeDark} height={320} />
+                    }
+                    expandedMinWidth={Math.max(700, monthlyFull.length * 50)}
+                  >
                     <SeriesChart data={monthly} tickInterval={0} color={chartColors.coffeeDark} />
-                  </Card>
+                  </ExpandableChart>
                 </div>
                 <Card>
                   <CardHeader

@@ -18,7 +18,7 @@ export function Card({ children, padded = true, className = '', ...rest }: CardP
 
 interface CardHeaderProps {
   title: string;
-  subtitle?: string;
+  subtitle?: string | undefined;
   icon?: ReactNode;
   actions?: ReactNode;
 }

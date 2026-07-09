@@ -6,9 +6,16 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Ancho máximo del diálogo: 'md' (formularios) o 'xl' (contenido ancho, p. ej. gráficos). */
+  size?: 'md' | 'xl';
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+const sizeClasses = {
+  md: 'max-w-md',
+  xl: 'max-w-4xl',
+} as const;
+
+export function Modal({ open, title, onClose, children, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleKey = (event: KeyboardEvent) => {
@@ -29,7 +36,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-pop"
+        className={`w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl animate-pop`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

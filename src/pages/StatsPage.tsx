@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { StatList, type StatListItem } from '@/components/stats/StatList';
 import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { SeriesChart } from '@/components/charts/SeriesChart';
+import { ExpandableChart } from '@/components/charts/ExpandableChart';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
 import { RingChart, type RingSegment } from '@/components/charts/RingChart';
 import { chartColors } from '@/components/charts/theme';
@@ -59,6 +60,12 @@ export default function StatsPage() {
   const intervals = useMemo(() => intervalHistogram(coffees), [coffees]);
   const monthlyAvg = useMemo(() => monthlyAverageSeries(coffees, now), [coffees, now]);
   const caffeine = useMemo(() => caffeineBreakdown(coffees), [coffees]);
+
+  // Series completas (todo el histórico) para la vista ampliada de cada gráfico.
+  const dailyFull = useMemo(() => dailySeries(coffees, now, 'all'), [coffees, now]);
+  const weeklyFull = useMemo(() => weeklySeries(coffees, now, 'all'), [coffees, now]);
+  const monthlyFull = useMemo(() => monthlySeries(coffees, now, 'all'), [coffees, now]);
+  const monthlyAvgFull = useMemo(() => monthlyAverageSeries(coffees, now, 'all'), [coffees, now]);
   const curious = useMemo(() => computeCuriousStats(coffees), [coffees]);
 
   if (loading) return <Spinner label="Calculando estadísticas..." />;
@@ -167,6 +174,8 @@ export default function StatsPage() {
             subtitle: 'Últimos 30 días',
             icon: <LineChart className="size-4" aria-hidden />,
             content: <SeriesChart data={daily} type="area" />,
+            expanded: <SeriesChart data={dailyFull} type="area" tickInterval={6} height={320} />,
+            expandedMinWidth: Math.max(700, dailyFull.length * 26),
           },
           {
             key: 'weekly',
@@ -174,6 +183,8 @@ export default function StatsPage() {
             subtitle: 'Últimas 12 semanas (semana del lunes indicado)',
             icon: <BarChart3 className="size-4" aria-hidden />,
             content: <SeriesChart data={weekly} tickInterval={0} />,
+            expanded: <SeriesChart data={weeklyFull} tickInterval={0} height={320} />,
+            expandedMinWidth: Math.max(700, weeklyFull.length * 42),
           },
           {
             key: 'monthly',
@@ -181,6 +192,10 @@ export default function StatsPage() {
             subtitle: 'Últimos 12 meses',
             icon: <BarChart3 className="size-4" aria-hidden />,
             content: <SeriesChart data={monthly} tickInterval={0} color={chartColors.coffeeDark} />,
+            expanded: (
+              <SeriesChart data={monthlyFull} tickInterval={0} color={chartColors.coffeeDark} height={320} />
+            ),
+            expandedMinWidth: Math.max(700, monthlyFull.length * 50),
           },
           {
             key: 'hourly',
@@ -188,6 +203,8 @@ export default function StatsPage() {
             subtitle: 'Todo el histórico',
             icon: <Clock className="size-4" aria-hidden />,
             content: <SeriesChart data={hourly} tickInterval={2} />,
+            expanded: <SeriesChart data={hourly} tickInterval={0} height={320} />,
+            expandedMinWidth: hourly.length * 34,
           },
           {
             key: 'intervals',
@@ -197,6 +214,8 @@ export default function StatsPage() {
             content: (
               <SeriesChart data={intervals} tickInterval={0} color={chartColors.amber} name="Intervalos" />
             ),
+            expanded: undefined,
+            expandedMinWidth: undefined,
           },
           {
             key: 'monthlyAvg',
@@ -206,6 +225,10 @@ export default function StatsPage() {
             content: (
               <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria" />
             ),
+            expanded: (
+              <SeriesChart data={monthlyAvgFull} type="line" color={chartColors.green} name="Media diaria" height={320} />
+            ),
+            expandedMinWidth: Math.max(700, monthlyAvgFull.length * 50),
           },
           {
             key: 'caffeine',
@@ -250,23 +273,29 @@ export default function StatsPage() {
                 </div>
               </div>
             ),
+            expanded: undefined,
+            expandedMinWidth: undefined,
           },
         ];
 
         return (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {chartCards.map((chart, index) => (
-              <Card
+              <ExpandableChart
                 key={chart.key}
+                title={chart.title}
+                subtitle={chart.subtitle}
+                icon={chart.icon}
+                expanded={chart.expanded}
+                expandedMinWidth={chart.expandedMinWidth}
                 className={
                   chartCards.length % 2 === 1 && index === chartCards.length - 1
                     ? 'col-span-2'
                     : ''
                 }
               >
-                <CardHeader title={chart.title} subtitle={chart.subtitle} icon={chart.icon} />
                 {chart.content}
-              </Card>
+              </ExpandableChart>
             ))}
           </div>
         );

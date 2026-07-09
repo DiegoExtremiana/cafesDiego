@@ -1,9 +1,11 @@
 /** Preparación de datos para los gráficos, a partir de la lista de cafés. */
 import type { Coffee } from '@/types/coffee';
 import {
+  DAY_MS,
   addDays,
   formatMonthName,
   hourLabel,
+  startOfDay,
   startOfWeek,
   toDateKey,
   toMonthKey,
@@ -19,13 +21,31 @@ export interface SeriesPoint {
 const shortDayFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
 const shortMonthFormat = new Intl.DateTimeFormat('es-ES', { month: 'short', year: '2-digit' });
 
-/** Cafés por día en los últimos `days` días (incluye días a cero). */
-export function dailySeries(coffees: Coffee[], now: Date, days = 30): SeriesPoint[] {
+/** Días transcurridos desde el primer café registrado (incluido hoy). */
+function daysSinceFirst(coffees: Coffee[], now: Date): number {
+  if (coffees.length === 0) return 0;
+  const first = coffees[0];
+  if (!first) return 0;
+  return Math.floor((startOfDay(now).getTime() - startOfDay(first.takenAt).getTime()) / DAY_MS) + 1;
+}
+
+/** Meses transcurridos desde el primer café registrado (incluido el actual). */
+function monthsSinceFirst(coffees: Coffee[], now: Date): number {
+  if (coffees.length === 0) return 0;
+  const first = coffees[0];
+  if (!first) return 0;
+  const takenAt = first.takenAt;
+  return (now.getFullYear() - takenAt.getFullYear()) * 12 + (now.getMonth() - takenAt.getMonth()) + 1;
+}
+
+/** Cafés por día en los últimos `days` días (incluye días a cero). `'all'` cubre todo el histórico. */
+export function dailySeries(coffees: Coffee[], now: Date, days: number | 'all' = 30): SeriesPoint[] {
+  const resolvedDays = days === 'all' ? Math.max(30, daysSinceFirst(coffees, now)) : days;
   const counts = new Map<string, number>();
   for (const [key, group] of groupByDay(coffees)) counts.set(key, group.length);
 
   const points: SeriesPoint[] = [];
-  for (let i = days - 1; i >= 0; i--) {
+  for (let i = resolvedDays - 1; i >= 0; i--) {
     const date = addDays(now, -i);
     const key = toDateKey(date);
     points.push({ key, label: shortDayFormat.format(date), count: counts.get(key) ?? 0 });
@@ -33,8 +53,10 @@ export function dailySeries(coffees: Coffee[], now: Date, days = 30): SeriesPoin
   return points;
 }
 
-/** Cafés por semana en las últimas `weeks` semanas. */
-export function weeklySeries(coffees: Coffee[], now: Date, weeks = 12): SeriesPoint[] {
+/** Cafés por semana en las últimas `weeks` semanas. `'all'` cubre todo el histórico. */
+export function weeklySeries(coffees: Coffee[], now: Date, weeks: number | 'all' = 12): SeriesPoint[] {
+  const resolvedWeeks =
+    weeks === 'all' ? Math.max(12, Math.ceil(daysSinceFirst(coffees, now) / 7)) : weeks;
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toDateKey(startOfWeek(coffee.takenAt));
@@ -43,7 +65,7 @@ export function weeklySeries(coffees: Coffee[], now: Date, weeks = 12): SeriesPo
 
   const points: SeriesPoint[] = [];
   const currentWeekStart = startOfWeek(now);
-  for (let i = weeks - 1; i >= 0; i--) {
+  for (let i = resolvedWeeks - 1; i >= 0; i--) {
     const weekStart = addDays(currentWeekStart, -7 * i);
     const key = toDateKey(weekStart);
     points.push({
@@ -55,8 +77,9 @@ export function weeklySeries(coffees: Coffee[], now: Date, weeks = 12): SeriesPo
   return points;
 }
 
-/** Cafés por mes en los últimos `months` meses. */
-export function monthlySeries(coffees: Coffee[], now: Date, months = 12): SeriesPoint[] {
+/** Cafés por mes en los últimos `months` meses. `'all'` cubre todo el histórico. */
+export function monthlySeries(coffees: Coffee[], now: Date, months: number | 'all' = 12): SeriesPoint[] {
+  const resolvedMonths = months === 'all' ? Math.max(12, monthsSinceFirst(coffees, now)) : months;
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
@@ -64,7 +87,7 @@ export function monthlySeries(coffees: Coffee[], now: Date, months = 12): Series
   }
 
   const points: SeriesPoint[] = [];
-  for (let i = months - 1; i >= 0; i--) {
+  for (let i = resolvedMonths - 1; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = toMonthKey(date);
     points.push({ key, label: shortMonthFormat.format(date), count: counts.get(key) ?? 0 });
@@ -109,8 +132,9 @@ export function intervalHistogram(coffees: Coffee[]): SeriesPoint[] {
   }));
 }
 
-/** Evolución del promedio de cafés por día registrado en cada mes. */
-export function monthlyAverageSeries(coffees: Coffee[], now: Date, months = 12): SeriesPoint[] {
+/** Evolución del promedio de cafés por día registrado en cada mes. `'all'` cubre todo el histórico. */
+export function monthlyAverageSeries(coffees: Coffee[], now: Date, months: number | 'all' = 12): SeriesPoint[] {
+  const resolvedMonths = months === 'all' ? Math.max(12, monthsSinceFirst(coffees, now)) : months;
   const totals = new Map<string, { count: number; days: Set<string> }>();
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
@@ -121,7 +145,7 @@ export function monthlyAverageSeries(coffees: Coffee[], now: Date, months = 12):
   }
 
   const points: SeriesPoint[] = [];
-  for (let i = months - 1; i >= 0; i--) {
+  for (let i = resolvedMonths - 1; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = toMonthKey(date);
     const entry = totals.get(key);
