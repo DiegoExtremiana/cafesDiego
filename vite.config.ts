@@ -7,6 +7,12 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
+  // Recharts + React 19 se basa en nombres de función/clase para reconocer sus propios
+  // componentes (p. ej. CategoricalChart) en tiempo de ejecución; esbuild los renombra al
+  // minificar y eso deja ejes, cuadrícula y tooltip sin renderizar solo en producción.
+  esbuild: {
+    keepNames: true,
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
