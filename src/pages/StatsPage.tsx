@@ -10,6 +10,7 @@ import {
   Sun,
   Trophy,
   Zap,
+  ZapOff,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -17,6 +18,7 @@ import { StatList, type StatListItem } from '@/components/stats/StatList';
 import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { SeriesChart } from '@/components/charts/SeriesChart';
 import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
+import { RingChart, type RingSegment } from '@/components/charts/RingChart';
 import { chartColors } from '@/components/charts/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
@@ -60,6 +62,14 @@ export default function StatsPage() {
   const curious = useMemo(() => computeCuriousStats(coffees), [coffees]);
 
   if (loading) return <Spinner label="Calculando estadísticas..." />;
+
+  const caffeineTotal = caffeine.reduce((sum, point) => sum + point.count, 0);
+  const caffeineRing: RingSegment[] = caffeine.map((point) => ({
+    key: point.key,
+    label: point.label,
+    value: point.count,
+    color: point.key === 'caffeine' ? chartColors.amber : chartColors.green,
+  }));
 
   const todayItems: StatListItem[] = [
     { label: 'Cafés', value: formatInteger(today.count) },
@@ -149,64 +159,118 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader
-            title="Evolución diaria"
-            subtitle="Últimos 30 días"
-            icon={<LineChart className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={daily} type="area" />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Evolución semanal"
-            subtitle="Últimas 12 semanas (semana del lunes indicado)"
-            icon={<BarChart3 className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={weekly} tickInterval={0} />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Evolución mensual"
-            subtitle="Últimos 12 meses"
-            icon={<BarChart3 className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={monthly} tickInterval={0} color={chartColors.coffeeDark} />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Cafés por hora del día"
-            subtitle="Todo el histórico"
-            icon={<Clock className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={hourly} tickInterval={2} />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Tiempo entre cafés"
-            subtitle="Histograma de intervalos del mismo día"
-            icon={<Hourglass className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={intervals} tickInterval={0} color={chartColors.amber} name="Intervalos" />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Promedio mensual"
-            subtitle="Cafés por día registrado en cada mes"
-            icon={<LineChart className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria" />
-        </Card>
-        <Card>
-          <CardHeader
-            title="Cafeína"
-            subtitle="Cafés con cafeína frente a descafeinados"
-            icon={<Flame className="size-4" aria-hidden />}
-          />
-          <SeriesChart data={caffeine} tickInterval={0} color={chartColors.amber} name="Cafés" />
-        </Card>
-      </div>
+      {(() => {
+        const chartCards = [
+          {
+            key: 'daily',
+            title: 'Evolución diaria',
+            subtitle: 'Últimos 30 días',
+            icon: <LineChart className="size-4" aria-hidden />,
+            content: <SeriesChart data={daily} type="area" />,
+          },
+          {
+            key: 'weekly',
+            title: 'Evolución semanal',
+            subtitle: 'Últimas 12 semanas (semana del lunes indicado)',
+            icon: <BarChart3 className="size-4" aria-hidden />,
+            content: <SeriesChart data={weekly} tickInterval={0} />,
+          },
+          {
+            key: 'monthly',
+            title: 'Evolución mensual',
+            subtitle: 'Últimos 12 meses',
+            icon: <BarChart3 className="size-4" aria-hidden />,
+            content: <SeriesChart data={monthly} tickInterval={0} color={chartColors.coffeeDark} />,
+          },
+          {
+            key: 'hourly',
+            title: 'Cafés por hora del día',
+            subtitle: 'Todo el histórico',
+            icon: <Clock className="size-4" aria-hidden />,
+            content: <SeriesChart data={hourly} tickInterval={2} />,
+          },
+          {
+            key: 'intervals',
+            title: 'Tiempo entre cafés',
+            subtitle: 'Histograma de intervalos del mismo día',
+            icon: <Hourglass className="size-4" aria-hidden />,
+            content: (
+              <SeriesChart data={intervals} tickInterval={0} color={chartColors.amber} name="Intervalos" />
+            ),
+          },
+          {
+            key: 'monthlyAvg',
+            title: 'Promedio mensual',
+            subtitle: 'Cafés por día registrado en cada mes',
+            icon: <LineChart className="size-4" aria-hidden />,
+            content: (
+              <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria" />
+            ),
+          },
+          {
+            key: 'caffeine',
+            title: 'Cafeína',
+            subtitle: 'Cafés con cafeína frente a descafeinados',
+            icon: <Flame className="size-4" aria-hidden />,
+            content: (
+              <div className="flex flex-col gap-3">
+                <RingChart
+                  data={caffeineRing}
+                  centerValue={String(caffeineTotal)}
+                  centerLabel={coffeeLabel(caffeineTotal)}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  {caffeineRing.map((segment) => {
+                    const Icon = segment.key === 'caffeine' ? Zap : ZapOff;
+                    const pct =
+                      caffeineTotal > 0 ? Math.round((segment.value / caffeineTotal) * 100) : 0;
+                    return (
+                      <div
+                        key={segment.key}
+                        className="rounded-xl border px-3 py-2"
+                        style={{
+                          borderColor: `${segment.color}55`,
+                          backgroundColor: `${segment.color}14`,
+                        }}
+                      >
+                        <div
+                          className="flex items-center justify-between text-sm font-semibold"
+                          style={{ color: segment.color }}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Icon className="size-3.5" aria-hidden />
+                            {segment.label}
+                          </span>
+                          <span>{segment.value}</span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-coffee-400">{pct}% del total</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ),
+          },
+        ];
+
+        return (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {chartCards.map((chart, index) => (
+              <Card
+                key={chart.key}
+                className={
+                  chartCards.length % 2 === 1 && index === chartCards.length - 1
+                    ? 'col-span-2'
+                    : ''
+                }
+              >
+                <CardHeader title={chart.title} subtitle={chart.subtitle} icon={chart.icon} />
+                {chart.content}
+              </Card>
+            ))}
+          </div>
+        );
+      })()}
 
       <Card>
         <CardHeader

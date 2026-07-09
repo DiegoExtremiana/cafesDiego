@@ -64,7 +64,9 @@ export function SeriesChart({
             dataKey="count"
             name={name}
             fill={color}
+            fillOpacity={0.85}
             radius={[4, 4, 0, 0]}
+            activeBar={{ fillOpacity: 1, className: 'cursor-pointer' }}
             animationDuration={600}
           />
         </BarChart>
@@ -79,6 +81,7 @@ export function SeriesChart({
             strokeWidth={2}
             fill={color}
             fillOpacity={0.18}
+            activeDot={{ r: 5, className: 'cursor-pointer' }}
             animationDuration={600}
           />
         </AreaChart>
@@ -92,6 +95,7 @@ export function SeriesChart({
             stroke={color}
             strokeWidth={2}
             dot={{ r: 3, fill: color }}
+            activeDot={{ r: 6, strokeWidth: 2, className: 'cursor-pointer' }}
             animationDuration={600}
           />
         </LineChart>
