@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Coffee } from '@/types/coffee';
+import type { Coffee, CoffeeDetails, CoffeeType } from '@/types/coffee';
 import type { CoffeeRow } from '@/types/database';
 
 function mapCoffee(row: CoffeeRow): Coffee {
@@ -7,6 +7,8 @@ function mapCoffee(row: CoffeeRow): Coffee {
     id: row.id,
     userId: row.user_id,
     takenAt: new Date(row.taken_at),
+    type: row.type as CoffeeType,
+    hasCaffeine: row.has_caffeine,
   };
 }
 
@@ -21,10 +23,18 @@ export async function listCoffees(userId: string): Promise<Coffee[]> {
   return data.map(mapCoffee);
 }
 
-export async function addCoffee(userId: string, takenAt: Date): Promise<Coffee> {
+export async function addCoffee(
+  userId: string,
+  takenAt: Date,
+  details?: CoffeeDetails,
+): Promise<Coffee> {
   const { data, error } = await supabase
     .from('coffees')
-    .insert({ user_id: userId, taken_at: takenAt.toISOString() })
+    .insert({
+      user_id: userId,
+      taken_at: takenAt.toISOString(),
+      ...(details && { type: details.type, has_caffeine: details.hasCaffeine }),
+    })
     .select()
     .single();
   if (error) throw new Error(`No se pudo registrar el café: ${error.message}`);

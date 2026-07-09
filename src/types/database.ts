@@ -29,18 +29,24 @@ export type CoffeeRow = {
   id: string;
   user_id: string;
   taken_at: string;
+  type: string;
+  has_caffeine: boolean;
   created_at: string;
 };
 
 export type CoffeeInsert = {
   user_id: string;
   taken_at: string;
+  type?: string;
+  has_caffeine?: boolean;
   id?: string;
   created_at?: string;
 };
 
 export type CoffeeUpdate = {
   taken_at?: string;
+  type?: string;
+  has_caffeine?: boolean;
 };
 
 export type Database = {

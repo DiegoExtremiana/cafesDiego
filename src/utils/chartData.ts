@@ -135,6 +135,20 @@ export function monthlyAverageSeries(coffees: Coffee[], now: Date, months = 12):
   return points;
 }
 
+/** Cafés con cafeína frente a descafeinados. */
+export function caffeineBreakdown(coffees: Coffee[]): SeriesPoint[] {
+  let caffeine = 0;
+  let decaf = 0;
+  for (const coffee of coffees) {
+    if (coffee.hasCaffeine) caffeine++;
+    else decaf++;
+  }
+  return [
+    { key: 'caffeine', label: 'Con cafeína', count: caffeine },
+    { key: 'decaf', label: 'Sin cafeína', count: decaf },
+  ];
+}
+
 export interface CalendarCell {
   dateKey: string;
   count: number;

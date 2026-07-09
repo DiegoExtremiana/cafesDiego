@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarRange,
   Clock,
+  Flame,
   Hourglass,
   LineChart,
   Sun,
@@ -28,6 +29,7 @@ import {
 } from '@/utils/stats';
 import { computeCuriousStats } from '@/utils/curiousStats';
 import {
+  caffeineBreakdown,
   dailySeries,
   hourlyDistribution,
   intervalHistogram,
@@ -54,6 +56,7 @@ export default function StatsPage() {
   const hourly = useMemo(() => hourlyDistribution(coffees), [coffees]);
   const intervals = useMemo(() => intervalHistogram(coffees), [coffees]);
   const monthlyAvg = useMemo(() => monthlyAverageSeries(coffees, now), [coffees, now]);
+  const caffeine = useMemo(() => caffeineBreakdown(coffees), [coffees]);
   const curious = useMemo(() => computeCuriousStats(coffees), [coffees]);
 
   if (loading) return <Spinner label="Calculando estadísticas..." />;
@@ -194,6 +197,14 @@ export default function StatsPage() {
             icon={<LineChart className="size-4" aria-hidden />}
           />
           <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria" />
+        </Card>
+        <Card>
+          <CardHeader
+            title="Cafeína"
+            subtitle="Cafés con cafeína frente a descafeinados"
+            icon={<Flame className="size-4" aria-hidden />}
+          />
+          <SeriesChart data={caffeine} tickInterval={0} color={chartColors.amber} name="Cafés" />
         </Card>
       </div>
 

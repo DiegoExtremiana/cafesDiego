@@ -34,6 +34,10 @@ create table public.coffees (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   taken_at timestamptz not null default now(),
+  -- Tipo de café elegido al mantener pulsado el botón de registro.
+  type text not null default 'espresso'
+    check (type in ('espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro')),
+  has_caffeine boolean not null default true,
   created_at timestamptz not null default now()
 );
 

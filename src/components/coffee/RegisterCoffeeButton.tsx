@@ -1,23 +1,31 @@
 import { useRef, useState } from 'react';
 import { Check, Coffee } from 'lucide-react';
 import { useCoffees } from '@/hooks/useCoffees';
+import { CoffeeDetailsModal } from './CoffeeDetailsModal';
+import type { CoffeeDetails } from '@/types/coffee';
+
+const LONG_PRESS_MS = 500;
 
 /**
  * Botón principal de la aplicación: registra un café con la hora actual.
- * Muestra una confirmación animada al completarse.
+ * Un toque rápido registra un café por defecto; mantenerlo pulsado abre
+ * un modal para elegir el tipo de café y si tenía cafeína.
  */
 export function RegisterCoffeeButton() {
   const { registerNow } = useCoffees();
   const [state, setState] = useState<'idle' | 'saving' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
 
-  const handleClick = async () => {
+  const register = async (details?: CoffeeDetails) => {
     if (state === 'saving') return;
     setError(null);
     setState('saving');
     try {
-      await registerNow();
+      await registerNow(details);
       setState('done');
       if (resetTimer.current) clearTimeout(resetTimer.current);
       resetTimer.current = setTimeout(() => setState('idle'), 1800);
@@ -27,13 +35,44 @@ export function RegisterCoffeeButton() {
     }
   };
 
+  const clearPressTimer = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
+  const handlePointerDown = () => {
+    if (state === 'saving') return;
+    longPressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setDetailsOpen(true);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerUp = () => {
+    const wasLongPress = longPressFired.current;
+    clearPressTimer();
+    if (!wasLongPress) void register();
+  };
+
+  const handleDetailsSubmit = async (details: CoffeeDetails) => {
+    await register(details);
+    setDetailsOpen(false);
+  };
+
   return (
     <div className="flex flex-col items-center gap-3">
       <button
         type="button"
-        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={clearPressTimer}
+        onPointerCancel={clearPressTimer}
+        onContextMenu={(event) => event.preventDefault()}
         disabled={state === 'saving'}
-        className={`group relative flex size-44 flex-col items-center justify-center gap-2 rounded-full text-white shadow-lg transition-all duration-300 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-coffee-300 active:scale-95 sm:size-52 ${
+        className={`group relative flex size-44 select-none flex-col items-center justify-center gap-2 rounded-full text-white shadow-lg transition-all duration-300 touch-none focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-coffee-300 active:scale-95 sm:size-52 ${
           state === 'done'
             ? 'bg-emerald-600'
             : 'bg-coffee-600 hover:bg-coffee-700 hover:shadow-xl'
@@ -51,7 +90,13 @@ export function RegisterCoffeeButton() {
           {state === 'done' ? 'Registrado' : state === 'saving' ? 'Guardando...' : 'Registrar café'}
         </span>
       </button>
+      <p className="text-xs text-coffee-400">Mantén pulsado para elegir tipo y cafeína</p>
       {error && <p className="text-sm text-red-600">{error}</p>}
+      <CoffeeDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        onSubmit={handleDetailsSubmit}
+      />
     </div>
   );
 }

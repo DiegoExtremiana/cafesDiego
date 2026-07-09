@@ -8,17 +8,17 @@ import {
 } from 'react';
 import * as coffeeService from '@/services/coffeeService';
 import { useAuth } from '@/hooks/useAuth';
-import type { Coffee } from '@/types/coffee';
+import type { Coffee, CoffeeDetails } from '@/types/coffee';
 
 export interface CoffeesContextValue {
   /** Todos los cafés del usuario, en orden cronológico ascendente. */
   coffees: Coffee[];
   loading: boolean;
   error: string | null;
-  /** Registra un café con la fecha y hora actuales. */
-  registerNow: () => Promise<void>;
+  /** Registra un café con la fecha y hora actuales; admite tipo y cafeína opcionales. */
+  registerNow: (details?: CoffeeDetails) => Promise<void>;
   /** Añade un café en una fecha y hora concretas (registro manual). */
-  addCoffee: (takenAt: Date) => Promise<void>;
+  addCoffee: (takenAt: Date, details?: CoffeeDetails) => Promise<void>;
   editCoffee: (id: string, takenAt: Date) => Promise<void>;
   removeCoffee: (id: string) => Promise<void>;
 }
@@ -65,15 +65,18 @@ export function CoffeesProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   const addCoffee = useCallback(
-    async (takenAt: Date) => {
+    async (takenAt: Date, details?: CoffeeDetails) => {
       if (!userId) throw new Error('No hay sesión activa.');
-      const created = await coffeeService.addCoffee(userId, takenAt);
+      const created = await coffeeService.addCoffee(userId, takenAt, details);
       setCoffees((current) => insertSorted(current, created));
     },
     [userId],
   );
 
-  const registerNow = useCallback(() => addCoffee(new Date()), [addCoffee]);
+  const registerNow = useCallback(
+    (details?: CoffeeDetails) => addCoffee(new Date(), details),
+    [addCoffee],
+  );
 
   const editCoffee = useCallback(async (id: string, takenAt: Date) => {
     const updated = await coffeeService.updateCoffee(id, takenAt);
