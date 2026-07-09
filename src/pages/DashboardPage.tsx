@@ -59,6 +59,57 @@ export default function DashboardPage() {
         <RegisterCoffeeButton />
       </div>
 
+      <Card>
+        <CardHeader title="Consumo de hoy" icon={<Gauge className="size-4" aria-hidden />} />
+        <div className="flex flex-col gap-4">
+          <div>
+            {profile?.maxDailyCaffeine != null ? (
+              <ProgressBar
+                value={stats.todayCaffeineCount}
+                max={profile.maxDailyCaffeine}
+                label="Cafeína"
+              />
+            ) : (
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-coffee-600">
+                  <Zap className="size-4 text-amber-500" aria-hidden />
+                  Cafeína
+                </span>
+                <span className="font-semibold tabular-nums text-coffee-900">
+                  {stats.todayCaffeineCount}
+                </span>
+              </div>
+            )}
+            {profile?.maxDailyCaffeine != null &&
+              stats.todayCaffeineCount >= profile.maxDailyCaffeine && (
+                <p className="mt-1.5 text-xs text-red-600">
+                  Has alcanzado tu máximo de cafeína de hoy.
+                </p>
+              )}
+          </div>
+          <div>
+            {profile?.maxDailyCoffees != null ? (
+              <ProgressBar value={stats.todayCount} max={profile.maxDailyCoffees} label="Cafés" />
+            ) : (
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-coffee-600">
+                  <CoffeeIcon className="size-4 text-coffee-500" aria-hidden />
+                  Cafés
+                </span>
+                <span className="font-semibold tabular-nums text-coffee-900">
+                  {stats.todayCount}
+                </span>
+              </div>
+            )}
+            {profile?.maxDailyCoffees != null && stats.todayCount >= profile.maxDailyCoffees && (
+              <p className="mt-1.5 text-xs text-red-600">
+                Has alcanzado tu máximo recomendado de hoy. Quizá toque descafeinado.
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           icon={<CoffeeIcon className="size-5" aria-hidden />}
@@ -111,57 +162,6 @@ export default function DashboardPage() {
           tone={nextIsPast ? 'positive' : 'default'}
         />
       </div>
-
-      <Card>
-        <CardHeader title="Consumo de hoy" icon={<Gauge className="size-4" aria-hidden />} />
-        <div className="flex flex-col gap-4">
-          <div>
-            {profile?.maxDailyCaffeine != null ? (
-              <ProgressBar
-                value={stats.todayCaffeineCount}
-                max={profile.maxDailyCaffeine}
-                label="Cafeína"
-              />
-            ) : (
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-coffee-600">
-                  <Zap className="size-4 text-amber-500" aria-hidden />
-                  Cafeína
-                </span>
-                <span className="font-semibold tabular-nums text-coffee-900">
-                  {stats.todayCaffeineCount}
-                </span>
-              </div>
-            )}
-            {profile?.maxDailyCaffeine != null &&
-              stats.todayCaffeineCount >= profile.maxDailyCaffeine && (
-                <p className="mt-1.5 text-xs text-red-600">
-                  Has alcanzado tu máximo de cafeína de hoy.
-                </p>
-              )}
-          </div>
-          <div>
-            {profile?.maxDailyCoffees != null ? (
-              <ProgressBar value={stats.todayCount} max={profile.maxDailyCoffees} label="Cafés" />
-            ) : (
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-coffee-600">
-                  <CoffeeIcon className="size-4 text-coffee-500" aria-hidden />
-                  Cafés
-                </span>
-                <span className="font-semibold tabular-nums text-coffee-900">
-                  {stats.todayCount}
-                </span>
-              </div>
-            )}
-            {profile?.maxDailyCoffees != null && stats.todayCount >= profile.maxDailyCoffees && (
-              <p className="mt-1.5 text-xs text-red-600">
-                Has alcanzado tu máximo recomendado de hoy. Quizá toque descafeinado.
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
 
       <Card>
         <CardHeader
