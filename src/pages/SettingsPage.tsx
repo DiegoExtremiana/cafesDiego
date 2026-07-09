@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   FileJson,
   FileSpreadsheet,
   Globe,
+  Loader2,
   Trash2,
   User,
 } from 'lucide-react';
@@ -23,8 +24,51 @@ import { WorkDaysSelector } from '@/components/settings/WorkDaysSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
 import { exportToCsv, exportToJson } from '@/utils/export';
+import type { ProfileSettings } from '@/types/profile';
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
+const SAVE_DEBOUNCE_MS = 700;
+
+interface FieldSnapshot {
+  displayName: string;
+  username: string;
+  workStart: string;
+  workEnd: string;
+  workDays: number[];
+  maxCoffees: string;
+  maxCaffeine: string;
+}
+
+function serialize(fields: FieldSnapshot): string {
+  return JSON.stringify(fields);
+}
+
+function validateFields(fields: FieldSnapshot):
+  | { error: string }
+  | { normalizedUsername: string; parsedMax: number | null; parsedMaxCaffeine: number | null } {
+  const normalizedUsername = fields.username.trim().toLowerCase();
+  if (!USERNAME_PATTERN.test(normalizedUsername)) {
+    return {
+      error:
+        'El nombre de usuario debe tener entre 3 y 30 caracteres: letras minúsculas, números, guiones o guiones bajos.',
+    };
+  }
+  if (fields.workDays.length === 0) {
+    return { error: 'Selecciona al menos un día laborable.' };
+  }
+  if (fields.workEnd <= fields.workStart) {
+    return { error: 'La hora de salida debe ser posterior a la de entrada.' };
+  }
+  const parsedMax = fields.maxCoffees.trim() === '' ? null : Number(fields.maxCoffees);
+  if (parsedMax !== null && (!Number.isInteger(parsedMax) || parsedMax < 1)) {
+    return { error: 'El máximo de cafés debe ser un número entero mayor que cero.' };
+  }
+  const parsedMaxCaffeine = fields.maxCaffeine.trim() === '' ? null : Number(fields.maxCaffeine);
+  if (parsedMaxCaffeine !== null && (!Number.isInteger(parsedMaxCaffeine) || parsedMaxCaffeine < 1)) {
+    return { error: 'El máximo de cafés con cafeína debe ser un número entero mayor que cero.' };
+  }
+  return { normalizedUsername, parsedMax, parsedMaxCaffeine };
+}
 
 export default function SettingsPage() {
   const { profile, updateProfile, deleteAccount } = useAuth();
@@ -44,15 +88,22 @@ export default function SettingsPage() {
   const [showAchievements, setShowAchievements] = useState(true);
   const [showAdvancedStats, setShowAdvancedStats] = useState(true);
 
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Carga los valores actuales del perfil en el formulario.
+  const snapshotRef = useRef('');
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleIdle = () => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setStatus('idle'), 1800);
+  };
+
+  // Carga los valores del perfil solo la primera vez (evita pisar ediciones en curso).
   useEffect(() => {
     if (!profile) return;
     setDisplayName(profile.displayName);
@@ -67,64 +118,85 @@ export default function SettingsPage() {
     setShowCharts(profile.showCharts);
     setShowAchievements(profile.showAchievements);
     setShowAdvancedStats(profile.showAdvancedStats);
-  }, [profile]);
+    snapshotRef.current = serialize({
+      displayName: profile.displayName,
+      username: profile.username,
+      workStart: profile.workStart,
+      workEnd: profile.workEnd,
+      workDays: profile.workDays,
+      maxCoffees: profile.maxDailyCoffees !== null ? String(profile.maxDailyCoffees) : '',
+      maxCaffeine: profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
+
+  // Autoguardado: espera a que el usuario pare de escribir y guarda sin botón.
+  useEffect(() => {
+    const snapshot = serialize({
+      displayName,
+      username,
+      workStart,
+      workEnd,
+      workDays,
+      maxCoffees,
+      maxCaffeine,
+    });
+    if (snapshot === snapshotRef.current) return;
+
+    const timer = setTimeout(async () => {
+      const result = validateFields({
+        displayName,
+        username,
+        workStart,
+        workEnd,
+        workDays,
+        maxCoffees,
+        maxCaffeine,
+      });
+      if ('error' in result) {
+        setStatus('error');
+        setErrorMessage(result.error);
+        return;
+      }
+      setStatus('saving');
+      setErrorMessage(null);
+      try {
+        await updateProfile({
+          displayName: displayName.trim(),
+          username: result.normalizedUsername,
+          workStart,
+          workEnd,
+          workDays,
+          maxDailyCoffees: result.parsedMax,
+          maxDailyCaffeine: result.parsedMaxCaffeine,
+        });
+        snapshotRef.current = snapshot;
+        setStatus('saved');
+        scheduleIdle();
+      } catch (err) {
+        setStatus('error');
+        setErrorMessage(err instanceof Error ? err.message : 'No se pudieron guardar los ajustes.');
+      }
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayName, username, workStart, workEnd, workDays, maxCoffees, maxCaffeine]);
 
   if (!profile) return <Spinner label="Cargando ajustes..." />;
 
   const publicUrl = `${window.location.origin}${window.location.pathname}#/u/${username}`;
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setSaved(false);
-
-    const normalizedUsername = username.trim().toLowerCase();
-    if (!USERNAME_PATTERN.test(normalizedUsername)) {
-      setError(
-        'El nombre de usuario debe tener entre 3 y 30 caracteres: letras minúsculas, números, guiones o guiones bajos.',
-      );
-      return;
-    }
-    if (workDays.length === 0) {
-      setError('Selecciona al menos un día laborable.');
-      return;
-    }
-    if (workEnd <= workStart) {
-      setError('La hora de salida debe ser posterior a la de entrada.');
-      return;
-    }
-    const parsedMax = maxCoffees.trim() === '' ? null : Number(maxCoffees);
-    if (parsedMax !== null && (!Number.isInteger(parsedMax) || parsedMax < 1)) {
-      setError('El máximo de cafés debe ser un número entero mayor que cero.');
-      return;
-    }
-    const parsedMaxCaffeine = maxCaffeine.trim() === '' ? null : Number(maxCaffeine);
-    if (parsedMaxCaffeine !== null && (!Number.isInteger(parsedMaxCaffeine) || parsedMaxCaffeine < 1)) {
-      setError('El máximo de cafés con cafeína debe ser un número entero mayor que cero.');
-      return;
-    }
-
-    setSaving(true);
+  const saveField = async (partial: Partial<ProfileSettings>) => {
+    setStatus('saving');
+    setErrorMessage(null);
     try {
-      await updateProfile({
-        displayName: displayName.trim(),
-        username: normalizedUsername,
-        workStart,
-        workEnd,
-        workDays,
-        maxDailyCoffees: parsedMax,
-        maxDailyCaffeine: parsedMaxCaffeine,
-        isPublic,
-        showHistory,
-        showCharts,
-        showAchievements,
-        showAdvancedStats,
-      });
-      setSaved(true);
+      await updateProfile(partial);
+      setStatus('saved');
+      scheduleIdle();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudieron guardar los ajustes.');
-    } finally {
-      setSaving(false);
+      setStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar.');
     }
   };
 
@@ -150,138 +222,159 @@ export default function SettingsPage() {
 
   return (
     <div className="flex max-w-5xl flex-col gap-5 animate-fade-in">
-      <h1 className="text-xl font-bold text-coffee-900">Ajustes</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-coffee-900">Ajustes</h1>
+        <div className="flex items-center gap-1.5 text-xs text-coffee-400">
+          {status === 'saving' && (
+            <>
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              Guardando...
+            </>
+          )}
+          {status === 'saved' && (
+            <>
+              <Check className="size-3.5 text-emerald-600" aria-hidden />
+              Guardado
+            </>
+          )}
+        </div>
+      </div>
+
+      {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <form onSubmit={handleSubmit} className="contents">
-          <Card>
-            <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
-            <div className="flex flex-col gap-4">
-              <Input
-                label="Nombre"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Diego"
-              />
-              <Input
-                label="Nombre de usuario"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                hint="Forma parte de la URL de tu perfil público."
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title="Jornada laboral"
-              subtitle="Se usa para calcular las horas trabajadas y tu ritmo"
-              icon={<Briefcase className="size-4" aria-hidden />}
+        <Card>
+          <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
+          <div className="flex flex-col gap-4">
+            <Input
+              label="Nombre"
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              placeholder="Diego"
             />
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Hora de entrada"
-                  type="time"
-                  value={workStart}
-                  onChange={(event) => setWorkStart(event.target.value)}
-                  required
-                />
-                <Input
-                  label="Hora de salida"
-                  type="time"
-                  value={workEnd}
-                  onChange={(event) => setWorkEnd(event.target.value)}
-                  required
-                />
-              </div>
-              <WorkDaysSelector value={workDays} onChange={setWorkDays} />
-              <Input
-                label="Máximo recomendado de cafés al día"
-                type="number"
-                min={1}
-                max={20}
-                value={maxCoffees}
-                onChange={(event) => setMaxCoffees(event.target.value)}
-                placeholder="Sin límite"
-                hint="Déjalo vacío si no quieres un límite."
-              />
-              <Input
-                label="Máximo recomendado de cafés con cafeína al día"
-                type="number"
-                min={1}
-                max={20}
-                value={maxCaffeine}
-                onChange={(event) => setMaxCaffeine(event.target.value)}
-                placeholder="Sin límite"
-                hint="Solo cuenta los cafés marcados como 'con cafeína'. Déjalo vacío si no quieres un límite."
-              />
-            </div>
-          </Card>
-
-          <Card className="lg:col-span-2">
-            <CardHeader
-              title="Perfil público"
-              subtitle="Comparte tus estadísticas con quien quieras"
-              icon={<Globe className="size-4" aria-hidden />}
+            <Input
+              label="Nombre de usuario"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              hint="Forma parte de la URL de tu perfil público."
             />
-            <div className="flex flex-col gap-1">
-              <Toggle
-                checked={isPublic}
-                onChange={setIsPublic}
-                label="Activar perfil público"
-                description="Cualquiera con el enlace podrá ver tus estadísticas, sin poder editarlas."
-              />
-              <Toggle
-                checked={showHistory}
-                onChange={setShowHistory}
-                label="Mostrar historial de cafés"
-                disabled={!isPublic}
-              />
-              <Toggle
-                checked={showCharts}
-                onChange={setShowCharts}
-                label="Mostrar gráficos"
-                disabled={!isPublic}
-              />
-              <Toggle
-                checked={showAchievements}
-                onChange={setShowAchievements}
-                label="Mostrar logros"
-                disabled={!isPublic}
-              />
-              <Toggle
-                checked={showAdvancedStats}
-                onChange={setShowAdvancedStats}
-                label="Mostrar estadísticas avanzadas"
-                disabled={!isPublic}
-              />
-              {isPublic && (
-                <div className="mt-3 flex items-center gap-2 rounded-xl bg-coffee-50 px-3 py-2">
-                  <code className="min-w-0 flex-1 truncate text-xs text-coffee-700">{publicUrl}</code>
-                  <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
-                    {copied ? (
-                      <Check className="size-3.5 text-emerald-600" aria-hidden />
-                    ) : (
-                      <Copy className="size-3.5" aria-hidden />
-                    )}
-                    {copied ? 'Copiado' : 'Copiar'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <div className="flex flex-col gap-5 lg:col-span-2">
-            {error && <Alert variant="error">{error}</Alert>}
-            {saved && <Alert variant="success">Ajustes guardados correctamente.</Alert>}
-            <div>
-              <Button type="submit" size="lg" loading={saving}>
-                Guardar cambios
-              </Button>
-            </div>
           </div>
-        </form>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Jornada laboral"
+            subtitle="Se usa para calcular las horas trabajadas y tu ritmo"
+            icon={<Briefcase className="size-4" aria-hidden />}
+          />
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Hora de entrada"
+                type="time"
+                value={workStart}
+                onChange={(event) => setWorkStart(event.target.value)}
+                required
+              />
+              <Input
+                label="Hora de salida"
+                type="time"
+                value={workEnd}
+                onChange={(event) => setWorkEnd(event.target.value)}
+                required
+              />
+            </div>
+            <WorkDaysSelector value={workDays} onChange={setWorkDays} />
+            <Input
+              label="Máximo recomendado de cafés al día"
+              type="number"
+              min={1}
+              max={20}
+              value={maxCoffees}
+              onChange={(event) => setMaxCoffees(event.target.value)}
+              placeholder="Sin límite"
+              hint="Déjalo vacío si no quieres un límite."
+            />
+            <Input
+              label="Máximo recomendado de cafés con cafeína al día"
+              type="number"
+              min={1}
+              max={20}
+              value={maxCaffeine}
+              onChange={(event) => setMaxCaffeine(event.target.value)}
+              placeholder="Sin límite"
+              hint="Solo cuenta los cafés marcados como 'con cafeína'. Déjalo vacío si no quieres un límite."
+            />
+          </div>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader
+            title="Perfil público"
+            subtitle="Comparte tus estadísticas con quien quieras"
+            icon={<Globe className="size-4" aria-hidden />}
+          />
+          <div className="flex flex-col gap-1">
+            <Toggle
+              checked={isPublic}
+              onChange={(checked) => {
+                setIsPublic(checked);
+                void saveField({ isPublic: checked });
+              }}
+              label="Activar perfil público"
+              description="Cualquiera con el enlace podrá ver tus estadísticas, sin poder editarlas."
+            />
+            <Toggle
+              checked={showHistory}
+              onChange={(checked) => {
+                setShowHistory(checked);
+                void saveField({ showHistory: checked });
+              }}
+              label="Mostrar historial de cafés"
+              disabled={!isPublic}
+            />
+            <Toggle
+              checked={showCharts}
+              onChange={(checked) => {
+                setShowCharts(checked);
+                void saveField({ showCharts: checked });
+              }}
+              label="Mostrar gráficos"
+              disabled={!isPublic}
+            />
+            <Toggle
+              checked={showAchievements}
+              onChange={(checked) => {
+                setShowAchievements(checked);
+                void saveField({ showAchievements: checked });
+              }}
+              label="Mostrar logros"
+              disabled={!isPublic}
+            />
+            <Toggle
+              checked={showAdvancedStats}
+              onChange={(checked) => {
+                setShowAdvancedStats(checked);
+                void saveField({ showAdvancedStats: checked });
+              }}
+              label="Mostrar estadísticas avanzadas"
+              disabled={!isPublic}
+            />
+            {isPublic && (
+              <div className="mt-3 flex items-center gap-2 rounded-xl bg-coffee-50 px-3 py-2">
+                <code className="min-w-0 flex-1 truncate text-xs text-coffee-700">{publicUrl}</code>
+                <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
+                  {copied ? (
+                    <Check className="size-3.5 text-emerald-600" aria-hidden />
+                  ) : (
+                    <Copy className="size-3.5" aria-hidden />
+                  )}
+                  {copied ? 'Copiado' : 'Copiar'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
 
         <Card>
           <CardHeader
@@ -324,11 +417,7 @@ export default function SettingsPage() {
               permanente.
             </p>
             <div>
-              <Button
-                type="button"
-                variant="danger"
-                onClick={() => setConfirmingDelete(true)}
-              >
+              <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
                 <Trash2 className="size-4" aria-hidden />
                 Eliminar mi cuenta
               </Button>
