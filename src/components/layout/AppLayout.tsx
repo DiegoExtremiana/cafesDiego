@@ -37,7 +37,7 @@ export function AppLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-coffee-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/" aria-label="Ir a la página de inicio" className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coffee-500">
+          <Link to="/panel" aria-label="Ir al panel" className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coffee-500">
             <Brand />
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">

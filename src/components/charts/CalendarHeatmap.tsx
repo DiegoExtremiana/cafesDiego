@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { calendarData, calendarColor } from '@/utils/chartData';
 import { formatDate, dateKeyToDate } from '@/utils/dates';
 import { coffeeLabel } from '@/utils/format';
@@ -11,12 +11,20 @@ interface CalendarHeatmapProps {
   now: Date;
 }
 
+interface ActiveCell {
+  dateKey: string;
+  count: number;
+}
+
 /**
  * Calendario anual tipo GitHub: cada día se colorea según el número
- * de cafés (1-2 verde, 3 naranja, 4 o más rojo).
+ * de cafés (1-2 verde, 3 naranja, 4 o más rojo). El detalle del día se
+ * muestra al pasar el ratón o al tocar la celda (funciona en móvil/tablet,
+ * donde no existe hover ni el atributo title nativo).
  */
 export function CalendarHeatmap({ coffees, now }: CalendarHeatmapProps) {
   const { weeks, monthLabels } = useMemo(() => calendarData(coffees, now), [coffees, now]);
+  const [active, setActive] = useState<ActiveCell | null>(null);
 
   return (
     <div className="overflow-x-auto pb-2">
@@ -42,14 +50,20 @@ export function CalendarHeatmap({ coffees, now }: CalendarHeatmapProps) {
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col gap-[3px]">
               {week.map((cell) => (
-                <span
+                <button
                   key={cell.dateKey}
-                  title={
+                  type="button"
+                  disabled={!cell.inRange}
+                  aria-label={
                     cell.inRange
                       ? `${formatDate(dateKeyToDate(cell.dateKey))}: ${cell.count} ${coffeeLabel(cell.count)}`
                       : undefined
                   }
-                  className="size-[11px] rounded-[3px] transition-transform hover:scale-125"
+                  onMouseEnter={() => cell.inRange && setActive({ dateKey: cell.dateKey, count: cell.count })}
+                  onMouseLeave={() => setActive(null)}
+                  onFocus={() => cell.inRange && setActive({ dateKey: cell.dateKey, count: cell.count })}
+                  onClick={() => cell.inRange && setActive({ dateKey: cell.dateKey, count: cell.count })}
+                  className="size-[11px] rounded-[3px] transition-transform hover:scale-125 focus-visible:scale-125 focus-visible:outline-2 focus-visible:outline-coffee-500 disabled:cursor-default"
                   style={{
                     backgroundColor: cell.inRange ? calendarColor(cell.count) : 'transparent',
                   }}
@@ -69,6 +83,11 @@ export function CalendarHeatmap({ coffees, now }: CalendarHeatmapProps) {
           ))}
           <span>Más</span>
         </div>
+        <p className="mt-2 min-h-[1.1rem] pl-6 text-xs font-medium text-coffee-600">
+          {active
+            ? `${formatDate(dateKeyToDate(active.dateKey))}: ${active.count} ${coffeeLabel(active.count)}`
+            : 'Pasa el cursor o toca un día para ver el detalle.'}
+        </p>
       </div>
     </div>
   );

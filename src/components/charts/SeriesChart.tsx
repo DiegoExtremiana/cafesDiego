@@ -36,7 +36,7 @@ export function SeriesChart({
 }: SeriesChartProps) {
   const commonAxes = (
     <>
-      <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" vertical={false} />
+      <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" vertical={type === 'bar'} />
       <XAxis
         dataKey="label"
         tick={axisTick}

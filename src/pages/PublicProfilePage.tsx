@@ -32,8 +32,8 @@ import { listCoffees } from '@/services/coffeeService';
 import { coffeesOfDay, computeHistoricStats, computeTodayStats, computeWeekStats } from '@/utils/stats';
 import { computeCuriousStats } from '@/utils/curiousStats';
 import { computeAchievements } from '@/utils/achievements';
-import { dailySeries, hourlyDistribution, monthlySeries } from '@/utils/chartData';
-import { formatDate, formatDuration, formatTime, formatWeekdayName } from '@/utils/dates';
+import { caffeineBreakdown, dailySeries, hourlyDistribution, monthlySeries } from '@/utils/chartData';
+import { addDays, formatDate, formatDuration, formatTime, formatWeekdayName, startOfWeek } from '@/utils/dates';
 import { coffeeLabel, formatInteger, formatNumber } from '@/utils/format';
 import type { Profile } from '@/types/profile';
 import { COFFEE_TYPE_LABELS, type Coffee } from '@/types/coffee';
@@ -94,8 +94,17 @@ export default function PublicProfilePage() {
     [todayCoffees],
   );
   const week = useMemo(() => computeWeekStats(coffees, now), [coffees, now]);
+  const weekCaffeineCount = useMemo(() => {
+    const start = startOfWeek(now);
+    const end = addDays(start, 7);
+    return coffees.filter((coffee) => coffee.takenAt >= start && coffee.takenAt < end && coffee.hasCaffeine)
+      .length;
+  }, [coffees, now]);
   const weekly7 = useMemo(() => dailySeries(coffees, now, 7), [coffees, now]);
   const historic = useMemo(() => computeHistoricStats(coffees, profile), [coffees, profile]);
+  const historicCaffeine = useMemo(() => caffeineBreakdown(coffees), [coffees]);
+  const historicCaffeineCount = historicCaffeine.find((point) => point.key === 'caffeine')?.count ?? 0;
+  const historicDecafCount = historicCaffeine.find((point) => point.key === 'decaf')?.count ?? 0;
   const curious = useMemo(() => computeCuriousStats(coffees), [coffees]);
   const achievements = useMemo(() => computeAchievements(coffees), [coffees]);
   const daily = useMemo(() => dailySeries(coffees, now), [coffees, now]);
@@ -221,6 +230,7 @@ export default function PublicProfilePage() {
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
                 label="Cafés hoy"
                 value={formatInteger(today.count)}
+                sub={`${todayCaffeineCount} con cafeína · ${today.count - todayCaffeineCount} sin`}
               />
               <StatCard
                 icon={<Zap className="size-5" aria-hidden />}
@@ -290,6 +300,7 @@ export default function PublicProfilePage() {
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
                 label="Total semana"
                 value={formatInteger(week.total)}
+                sub={`${weekCaffeineCount} con cafeína · ${week.total - weekCaffeineCount} sin`}
               />
               <StatCard
                 icon={<BarChart3 className="size-5" aria-hidden />}
@@ -358,6 +369,12 @@ export default function PublicProfilePage() {
                 }
                 sub="Entre cafés del mismo día"
               />
+              <StatCard
+                icon={<Zap className="size-5" aria-hidden />}
+                label="Con cafeína"
+                value={formatInteger(historicCaffeineCount)}
+                sub={`${formatInteger(historicDecafCount)} sin cafeína`}
+              />
             </div>
 
             {profile.showCharts && (
@@ -407,14 +424,29 @@ export default function PublicProfilePage() {
                 />
                 <ul className="divide-y divide-coffee-100">
                   {recentCoffees.map((coffee) => (
-                    <li key={coffee.id} className="flex items-center gap-3 py-2.5">
-                      <span className="flex size-8 items-center justify-center rounded-lg bg-coffee-100 text-coffee-600">
-                        <CoffeeIcon className="size-4" aria-hidden />
-                      </span>
-                      <span className="text-sm font-medium tabular-nums text-coffee-900">
-                        {formatTime(coffee.takenAt)}
-                      </span>
-                      <span className="text-sm text-coffee-400">{formatDate(coffee.takenAt)}</span>
+                    <li key={coffee.id} className="flex items-center justify-between gap-3 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-8 items-center justify-center rounded-lg bg-coffee-100 text-coffee-600">
+                          <CoffeeTypeIcon type={coffee.type} className="size-4" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium tabular-nums text-coffee-900">
+                            {formatTime(coffee.takenAt)} · {formatDate(coffee.takenAt)}
+                          </p>
+                          <p className="text-xs text-coffee-400">{COFFEE_TYPE_LABELS[coffee.type]}</p>
+                        </div>
+                      </div>
+                      {coffee.hasCaffeine ? (
+                        <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                          <Zap className="size-3.5" aria-hidden />
+                          Con cafeína
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs font-medium text-coffee-400">
+                          <ZapOff className="size-3.5" aria-hidden />
+                          Sin cafeína
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

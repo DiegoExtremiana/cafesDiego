@@ -8,7 +8,7 @@ export const chartColors = {
   green: '#22c55e',
   amber: '#f59e0b',
   red: '#ef4444',
-  grid: 'rgba(133, 90, 53, 0.22)',
+  grid: 'rgba(133, 90, 53, 0.35)',
 };
 
 export const tooltipStyle: CSSProperties = {
