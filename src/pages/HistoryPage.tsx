@@ -97,7 +97,7 @@ export default function HistoryPage() {
                 onChange={(event) => {
                   if (event.target.value) setSelectedDate(dateKeyToDate(event.target.value));
                 }}
-                className="absolute inset-0 cursor-pointer opacity-0"
+                className="absolute inset-0 cursor-pointer text-base opacity-0"
                 aria-label="Seleccionar fecha"
               />
             </label>
