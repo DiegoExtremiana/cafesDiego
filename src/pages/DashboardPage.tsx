@@ -76,7 +76,7 @@ export default function DashboardPage() {
                   Cafeína
                 </span>
                 <span className="font-semibold tabular-nums text-coffee-900">
-                  {stats.todayCaffeineCount}
+                  {formatNumber(stats.todayCaffeineCount)}
                 </span>
               </div>
             )}
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                   Cafés
                 </span>
                 <span className="font-semibold tabular-nums text-coffee-900">
-                  {stats.todayCount}
+                  {formatNumber(stats.todayCount)}
                 </span>
               </div>
             )}
@@ -114,7 +114,7 @@ export default function DashboardPage() {
         <StatCard
           icon={<CoffeeIcon className="size-5" aria-hidden />}
           label="Cafés hoy"
-          value={String(stats.todayCount)}
+          value={formatNumber(stats.todayCount)}
           sub={
             stats.todayCount === 0
               ? 'Todavía ninguno'

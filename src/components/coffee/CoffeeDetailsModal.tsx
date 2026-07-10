@@ -4,7 +4,14 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { CoffeeTypeIcon } from './CoffeeTypeIcon';
-import { COFFEE_TYPES, COFFEE_TYPE_LABELS, type CoffeeDetails, type CoffeeType } from '@/types/coffee';
+import {
+  COFFEE_TYPE_LABELS,
+  COFFEE_TYPE_VALUES,
+  coffeeTypesFor,
+  type CoffeeDetails,
+  type CoffeeType,
+} from '@/types/coffee';
+import { coffeeLabel, formatNumber } from '@/utils/format';
 
 interface CoffeeDetailsModalProps {
   open: boolean;
@@ -33,13 +40,15 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
     }
   };
 
+  const visibleTypes = coffeeTypesFor(hasCaffeine);
+
   return (
     <Modal open={open} title="¿Qué has tomado?" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div>
           <p className="mb-2 text-sm font-medium text-coffee-700">Tipo de café</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {COFFEE_TYPES.map((value) => (
+            {visibleTypes.map((value) => (
               <button
                 key={value}
                 type="button"
@@ -52,6 +61,12 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
               >
                 <CoffeeTypeIcon type={value} className="size-5" />
                 {COFFEE_TYPE_LABELS[value]}
+                {COFFEE_TYPE_VALUES[value] !== 1 && (
+                  <span className="text-[10px] leading-none text-coffee-400">
+                    vale {formatNumber(COFFEE_TYPE_VALUES[value])}{' '}
+                    {coffeeLabel(COFFEE_TYPE_VALUES[value])}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -59,7 +74,11 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
 
         <Toggle
           checked={hasCaffeine}
-          onChange={setHasCaffeine}
+          onChange={(checked) => {
+            setHasCaffeine(checked);
+            // La energética y la cerveza solo existen en su estado de cafeína.
+            if (!coffeeTypesFor(checked).includes(type)) setType('espresso');
+          }}
           label="Con cafeína"
           description="Desactiva si era descafeinado."
           activeLabel="Con cafeína"

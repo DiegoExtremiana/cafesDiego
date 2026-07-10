@@ -1,5 +1,6 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { tooltipStyle } from './theme';
+import { formatNumber } from '@/utils/format';
 
 export interface RingSegment {
   key: string;
@@ -49,7 +50,7 @@ export function RingChart({ data, height = 220, centerValue, centerLabel }: Ring
           </Pie>
           <Tooltip
             contentStyle={tooltipStyle}
-            formatter={(value: number, label: string) => [`${value}`, label]}
+            formatter={(value: number, label: string) => [formatNumber(value), label]}
           />
         </PieChart>
       </ResponsiveContainer>

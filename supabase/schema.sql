@@ -38,7 +38,11 @@ create table public.coffees (
   taken_at timestamptz not null default now(),
   -- Tipo de café elegido al mantener pulsado el botón de registro.
   type text not null default 'espresso'
-    check (type in ('espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro')),
+    check (type in (
+      'espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro',
+      'energetica', 'te_negro', 'te_verde', 'matcha', 'cola',
+      'cerveza', 'vino', 'zumo', 'agua', 'leche', 'infusion'
+    )),
   has_caffeine boolean not null default true,
   created_at timestamptz not null default now()
 );

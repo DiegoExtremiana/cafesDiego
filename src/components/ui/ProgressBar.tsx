@@ -1,3 +1,5 @@
+import { formatNumber } from '@/utils/format';
+
 interface ProgressBarProps {
   value: number;
   max: number;
@@ -15,7 +17,7 @@ export function ProgressBar({ value, max, label }: ProgressBarProps) {
         <div className="mb-1.5 flex justify-between text-xs text-coffee-500">
           <span>{label}</span>
           <span className="font-medium">
-            {value} / {max}
+            {formatNumber(value)} / {formatNumber(max)}
           </span>
         </div>
       )}

@@ -2,7 +2,7 @@
  * Motor de estadísticas: funciones puras sobre la lista de cafés
  * (siempre ordenada de forma ascendente por takenAt).
  */
-import type { Coffee } from '@/types/coffee';
+import { coffeeValue, sumCoffeeValue, type Coffee } from '@/types/coffee';
 import type { Profile } from '@/types/profile';
 import type {
   DashboardStats,
@@ -42,11 +42,11 @@ export function groupByDay(coffees: Coffee[]): Map<string, Coffee[]> {
   return groups;
 }
 
-/** Recuento por día como lista ordenada. */
+/** Recuento por día como lista ordenada (en valor de cafés: la energética vale 1,5 y la cerveza 0). */
 export function countByDay(coffees: Coffee[]): DayCount[] {
   return [...groupByDay(coffees)].map(([dateKey, group]) => ({
     dateKey,
-    count: group.length,
+    count: sumCoffeeValue(group),
   }));
 }
 
@@ -104,7 +104,7 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
   let coffeesPerHourToday: number | null = null;
   if (firstToday) {
     const hoursElapsed = Math.max(minutesBetween(firstToday.takenAt, now) / 60, 1);
-    coffeesPerHourToday = today.length / hoursElapsed;
+    coffeesPerHourToday = sumCoffeeValue(today) / hoursElapsed;
   }
 
   // Estimación del siguiente café combinando dos patrones del histórico:
@@ -150,8 +150,8 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
   }
 
   return {
-    todayCount: today.length,
-    todayCaffeineCount: today.filter((coffee) => coffee.hasCaffeine).length,
+    todayCount: sumCoffeeValue(today),
+    todayCaffeineCount: sumCoffeeValue(today.filter((coffee) => coffee.hasCaffeine)),
     lastCoffee,
     minutesSinceLast: lastCoffee ? minutesBetween(lastCoffee.takenAt, now) : null,
     todayAvgIntervalMinutes: todayAvgInterval,
@@ -187,9 +187,10 @@ export function computeWeekStats(coffees: Coffee[], now: Date): WeekStats {
     if (!minDay || day.count < minDay.count) minDay = day;
   }
 
+  const weekTotal = sumCoffeeValue(weekCoffees);
   return {
-    total: weekCoffees.length,
-    dailyAvg: elapsedDays > 0 ? weekCoffees.length / elapsedDays : 0,
+    total: weekTotal,
+    dailyAvg: elapsedDays > 0 ? weekTotal / elapsedDays : 0,
     maxDay,
     minDay,
   };
@@ -205,8 +206,8 @@ export function computeMonthStats(coffees: Coffee[], now: Date): MonthStats {
   let previousTotal = 0;
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
-    if (key === currentKey) total++;
-    else if (key === previousKey) previousTotal++;
+    if (key === currentKey) total += coffeeValue(coffee);
+    else if (key === previousKey) previousTotal += coffeeValue(coffee);
   }
 
   const elapsedDays = now.getDate();
@@ -249,12 +250,13 @@ export function computeHistoricStats(coffees: Coffee[], profile: Profile | null)
   }
 
   const intervals = intraDayIntervals(coffees);
+  const totalValue = sumCoffeeValue(coffees);
 
   return {
-    total: coffees.length,
-    dailyAvg: dayCount > 0 ? coffees.length / dayCount : 0,
-    weeklyAvg: weeks.size > 0 ? coffees.length / weeks.size : 0,
-    monthlyAvg: months.size > 0 ? coffees.length / months.size : 0,
+    total: totalValue,
+    dailyAvg: dayCount > 0 ? totalValue / dayCount : 0,
+    weeklyAvg: weeks.size > 0 ? totalValue / weeks.size : 0,
+    monthlyAvg: months.size > 0 ? totalValue / months.size : 0,
     totalWorkedHours,
     totalIntervalMinutes: intervals.reduce((sum, value) => sum + value, 0),
     firstCoffee,

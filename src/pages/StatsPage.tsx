@@ -79,7 +79,7 @@ export default function StatsPage() {
   }));
 
   const todayItems: StatListItem[] = [
-    { label: 'Cafés', value: formatInteger(today.count) },
+    { label: 'Cafés', value: formatNumber(today.count) },
     {
       label: 'Cafés por hora',
       value: today.coffeesPerHour !== null ? formatNumber(today.coffeesPerHour) : '—',
@@ -91,20 +91,20 @@ export default function StatsPage() {
   ];
 
   const weekItems: StatListItem[] = [
-    { label: 'Total', value: formatInteger(week.total) },
+    { label: 'Total', value: formatNumber(week.total) },
     { label: 'Media diaria', value: formatNumber(week.dailyAvg) },
     {
       label: 'Día con más cafés',
       icon: <Zap className="size-3.5 text-amber-500" aria-hidden />,
       value: week.maxDay
-        ? `${formatWeekdayName(week.maxDay.dateKey)} (${week.maxDay.count})`
+        ? `${formatWeekdayName(week.maxDay.dateKey)} (${formatNumber(week.maxDay.count)})`
         : '—',
     },
     {
       label: 'Día con menos cafés',
       icon: <Trophy className="size-3.5 text-emerald-500" aria-hidden />,
       value: week.minDay
-        ? `${formatWeekdayName(week.minDay.dateKey)} (${week.minDay.count})`
+        ? `${formatWeekdayName(week.minDay.dateKey)} (${formatNumber(week.minDay.count)})`
         : '—',
     },
   ];
@@ -112,21 +112,21 @@ export default function StatsPage() {
   // Comparación: más cafés que el mes anterior en rojo, menos en verde.
   const monthDelta = month.total - month.previousTotal;
   const monthItems: StatListItem[] = [
-    { label: 'Total', value: formatInteger(month.total) },
+    { label: 'Total', value: formatNumber(month.total) },
     { label: 'Media diaria', value: formatNumber(month.dailyAvg) },
     { label: 'Media semanal', value: formatNumber(month.weeklyAvg) },
     {
       label: 'Respecto al mes anterior',
       value:
         monthDelta === 0
-          ? `Igual (${formatInteger(month.previousTotal)})`
-          : `${monthDelta > 0 ? '+' : ''}${formatInteger(monthDelta)} (antes ${formatInteger(month.previousTotal)})`,
+          ? `Igual (${formatNumber(month.previousTotal)})`
+          : `${monthDelta > 0 ? '+' : ''}${formatNumber(monthDelta)} (antes ${formatNumber(month.previousTotal)})`,
       tone: monthDelta > 0 ? 'negative' : monthDelta < 0 ? 'positive' : 'default',
     },
   ];
 
   const historicItems: StatListItem[] = [
-    { label: 'Total de cafés', value: formatInteger(historic.total) },
+    { label: 'Total de cafés', value: formatNumber(historic.total) },
     { label: 'Promedio diario', value: formatNumber(historic.dailyAvg) },
     { label: 'Promedio semanal', value: formatNumber(historic.weeklyAvg) },
     { label: 'Promedio mensual', value: formatNumber(historic.monthlyAvg) },
@@ -239,7 +239,7 @@ export default function StatsPage() {
               <div className="flex flex-col gap-3">
                 <RingChart
                   data={caffeineRing}
-                  centerValue={String(caffeineTotal)}
+                  centerValue={formatNumber(caffeineTotal)}
                   centerLabel={coffeeLabel(caffeineTotal)}
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -264,7 +264,7 @@ export default function StatsPage() {
                             <Icon className="size-3.5" aria-hidden />
                             {segment.label}
                           </span>
-                          <span>{segment.value}</span>
+                          <span>{formatNumber(segment.value)}</span>
                         </div>
                         <p className="mt-0.5 text-xs text-coffee-400">{pct}% del total</p>
                       </div>
@@ -309,7 +309,7 @@ export default function StatsPage() {
         />
         <CalendarHeatmap coffees={coffees} now={now} />
         <p className="mt-1 text-xs text-coffee-400">
-          {historic.total} {coffeeLabel(historic.total)} registrados en total
+          {formatNumber(historic.total)} {coffeeLabel(historic.total)} registrados en total
         </p>
       </Card>
 

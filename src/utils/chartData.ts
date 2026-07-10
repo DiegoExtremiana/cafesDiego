@@ -1,5 +1,5 @@
 /** Preparación de datos para los gráficos, a partir de la lista de cafés. */
-import type { Coffee } from '@/types/coffee';
+import { coffeeValue, sumCoffeeValue, type Coffee } from '@/types/coffee';
 import {
   DAY_MS,
   addDays,
@@ -20,6 +20,11 @@ export interface SeriesPoint {
 
 const shortDayFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
 const shortMonthFormat = new Intl.DateTimeFormat('es-ES', { month: 'short', year: '2-digit' });
+
+/** Redondeo a un decimal para evitar restos de coma flotante (0,3 + 0,3 + 0,3). */
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
 
 /** Días transcurridos desde el primer café registrado (incluido hoy). */
 function daysSinceFirst(coffees: Coffee[], now: Date): number {
@@ -42,13 +47,13 @@ function monthsSinceFirst(coffees: Coffee[], now: Date): number {
 export function dailySeries(coffees: Coffee[], now: Date, days: number | 'all' = 30): SeriesPoint[] {
   const resolvedDays = days === 'all' ? Math.max(30, daysSinceFirst(coffees, now)) : days;
   const counts = new Map<string, number>();
-  for (const [key, group] of groupByDay(coffees)) counts.set(key, group.length);
+  for (const [key, group] of groupByDay(coffees)) counts.set(key, sumCoffeeValue(group));
 
   const points: SeriesPoint[] = [];
   for (let i = resolvedDays - 1; i >= 0; i--) {
     const date = addDays(now, -i);
     const key = toDateKey(date);
-    points.push({ key, label: shortDayFormat.format(date), count: counts.get(key) ?? 0 });
+    points.push({ key, label: shortDayFormat.format(date), count: round1(counts.get(key) ?? 0) });
   }
   return points;
 }
@@ -60,7 +65,7 @@ export function weeklySeries(coffees: Coffee[], now: Date, weeks: number | 'all'
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toDateKey(startOfWeek(coffee.takenAt));
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    counts.set(key, (counts.get(key) ?? 0) + coffeeValue(coffee));
   }
 
   const points: SeriesPoint[] = [];
@@ -71,7 +76,7 @@ export function weeklySeries(coffees: Coffee[], now: Date, weeks: number | 'all'
     points.push({
       key,
       label: shortDayFormat.format(weekStart),
-      count: counts.get(key) ?? 0,
+      count: round1(counts.get(key) ?? 0),
     });
   }
   return points;
@@ -83,14 +88,14 @@ export function monthlySeries(coffees: Coffee[], now: Date, months: number | 'al
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    counts.set(key, (counts.get(key) ?? 0) + coffeeValue(coffee));
   }
 
   const points: SeriesPoint[] = [];
   for (let i = resolvedMonths - 1; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = toMonthKey(date);
-    points.push({ key, label: shortMonthFormat.format(date), count: counts.get(key) ?? 0 });
+    points.push({ key, label: shortMonthFormat.format(date), count: round1(counts.get(key) ?? 0) });
   }
   return points;
 }
@@ -100,12 +105,12 @@ export function hourlyDistribution(coffees: Coffee[]): SeriesPoint[] {
   const counts = Array.from({ length: 24 }, () => 0);
   for (const coffee of coffees) {
     const hour = coffee.takenAt.getHours();
-    counts[hour] = (counts[hour] ?? 0) + 1;
+    counts[hour] = (counts[hour] ?? 0) + coffeeValue(coffee);
   }
   return counts.map((count, hour) => ({
     key: String(hour),
     label: hourLabel(hour),
-    count,
+    count: round1(count),
   }));
 }
 
@@ -139,7 +144,7 @@ export function monthlyAverageSeries(coffees: Coffee[], now: Date, months: numbe
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
     const entry = totals.get(key) ?? { count: 0, days: new Set<string>() };
-    entry.count++;
+    entry.count += coffeeValue(coffee);
     entry.days.add(toDateKey(coffee.takenAt));
     totals.set(key, entry);
   }
@@ -159,17 +164,17 @@ export function monthlyAverageSeries(coffees: Coffee[], now: Date, months: numbe
   return points;
 }
 
-/** Cafés con cafeína frente a descafeinados. */
+/** Cafés con cafeína frente a descafeinados, en valor de cafés. */
 export function caffeineBreakdown(coffees: Coffee[]): SeriesPoint[] {
   let caffeine = 0;
   let decaf = 0;
   for (const coffee of coffees) {
-    if (coffee.hasCaffeine) caffeine++;
-    else decaf++;
+    if (coffee.hasCaffeine) caffeine += coffeeValue(coffee);
+    else decaf += coffeeValue(coffee);
   }
   return [
-    { key: 'caffeine', label: 'Con cafeína', count: caffeine },
-    { key: 'decaf', label: 'Sin cafeína', count: decaf },
+    { key: 'caffeine', label: 'Con cafeína', count: round1(caffeine) },
+    { key: 'decaf', label: 'Sin cafeína', count: round1(decaf) },
   ];
 }
 
@@ -190,7 +195,7 @@ export interface CalendarData {
 /** Datos para el calendario tipo GitHub del último año. */
 export function calendarData(coffees: Coffee[], now: Date, weekCount = 52): CalendarData {
   const counts = new Map<string, number>();
-  for (const [key, group] of groupByDay(coffees)) counts.set(key, group.length);
+  for (const [key, group] of groupByDay(coffees)) counts.set(key, round1(sumCoffeeValue(group)));
 
   const todayKey = toDateKey(now);
   const firstWeekStart = addDays(startOfWeek(now), -7 * (weekCount - 1));
@@ -222,11 +227,11 @@ export function calendarData(coffees: Coffee[], now: Date, weekCount = 52): Cale
   return { weeks, monthLabels };
 }
 
-/** Color del calendario según el número de cafés (verde, naranja, rojo). */
+/** Color del calendario según el valor en cafés (verde, naranja, rojo); admite fracciones. */
 export function calendarColor(count: number): string {
-  if (count === 0) return 'var(--color-coffee-100)';
-  if (count === 1) return '#86efac';
-  if (count === 2) return '#22c55e';
-  if (count === 3) return '#f97316';
+  if (count <= 0) return 'var(--color-coffee-100)';
+  if (count < 2) return '#86efac';
+  if (count < 3) return '#22c55e';
+  if (count < 4) return '#f97316';
   return '#ef4444';
 }

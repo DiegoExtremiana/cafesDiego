@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Toggle } from '@/components/ui/Toggle';
 import { CoffeeTypeIcon } from './CoffeeTypeIcon';
 import { formatDuration, formatTime, minutesBetween } from '@/utils/dates';
-import { COFFEE_TYPES, COFFEE_TYPE_LABELS, type Coffee, type CoffeeDetails } from '@/types/coffee';
+import { COFFEE_TYPE_LABELS, coffeeTypesFor, type Coffee, type CoffeeDetails } from '@/types/coffee';
 
 interface CoffeeListProps {
   /** Cafés de un mismo día, en orden ascendente. */
@@ -88,7 +88,7 @@ export function CoffeeList({ coffees, onEdit, onDelete, onUpdateDetails }: Coffe
 
             <div className="flex flex-wrap items-center justify-between gap-3 pl-12">
               <div className="flex flex-wrap gap-1">
-                {COFFEE_TYPES.map((value) => (
+                {coffeeTypesFor(coffee.hasCaffeine).map((value) => (
                   <button
                     key={value}
                     type="button"
@@ -110,7 +110,11 @@ export function CoffeeList({ coffees, onEdit, onDelete, onUpdateDetails }: Coffe
                 <Toggle
                   checked={coffee.hasCaffeine}
                   onChange={(checked) =>
-                    handleUpdate(coffee, { type: coffee.type, hasCaffeine: checked })
+                    handleUpdate(coffee, {
+                      // Si el tipo no existe en el nuevo estado (energética/cerveza), pasa a 'otro'.
+                      type: coffeeTypesFor(checked).includes(coffee.type) ? coffee.type : 'otro',
+                      hasCaffeine: checked,
+                    })
                   }
                   label="Con cafeína"
                   activeLabel="Con cafeína"
