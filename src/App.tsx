@@ -15,6 +15,7 @@ import NotFoundPage from '@/pages/NotFoundPage';
 const HistoryPage = lazy(() => import('@/pages/HistoryPage'));
 const StatsPage = lazy(() => import('@/pages/StatsPage'));
 const AchievementsPage = lazy(() => import('@/pages/AchievementsPage'));
+const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const PublicProfilePage = lazy(() => import('@/pages/PublicProfilePage'));
 
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="/historial" element={<HistoryPage />} />
                 <Route path="/estadisticas" element={<StatsPage />} />
                 <Route path="/logros" element={<AchievementsPage />} />
+                <Route path="/grupos" element={<GroupsPage />} />
                 <Route path="/ajustes" element={<SettingsPage />} />
               </Route>
             </Route>

@@ -84,6 +84,65 @@ export type Database = {
         Args: { check_email: string };
         Returns: boolean;
       };
+      create_group: {
+        Args: { group_name: string };
+        Returns: string;
+      };
+      my_groups: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          name: string;
+          owner_id: string;
+          member_count: number;
+          created_at: string;
+        }[];
+      };
+      invite_to_group: {
+        Args: { gid: string; invitee_username: string };
+        Returns: undefined;
+      };
+      my_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          group_id: string;
+          group_name: string;
+          inviter_username: string;
+          inviter_display_name: string;
+          created_at: string;
+        }[];
+      };
+      count_pending_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      respond_invitation: {
+        Args: { invitation_id: string; accept: boolean };
+        Returns: undefined;
+      };
+      leave_group: {
+        Args: { gid: string };
+        Returns: undefined;
+      };
+      delete_group: {
+        Args: { gid: string };
+        Returns: undefined;
+      };
+      group_ranking: {
+        Args: { gid: string; tz: string };
+        Returns: {
+          user_id: string;
+          username: string;
+          display_name: string;
+          today_mg: number;
+          week_mg: number;
+          total_mg: number;
+          today_drinks: number;
+          week_drinks: number;
+          total_drinks: number;
+        }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

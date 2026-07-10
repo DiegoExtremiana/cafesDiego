@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   History,
@@ -6,15 +7,18 @@ import {
   LogOut,
   Settings,
   Trophy,
+  Users,
 } from 'lucide-react';
 import { Brand } from './Brand';
 import { useAuth } from '@/hooks/useAuth';
+import { countPendingInvitations } from '@/services/groupService';
 
 const navItems = [
   { to: '/panel', label: 'Panel', icon: LayoutDashboard },
   { to: '/historial', label: 'Historial', icon: History },
   { to: '/estadisticas', label: 'Estadísticas', icon: BarChart3 },
   { to: '/logros', label: 'Logros', icon: Trophy },
+  { to: '/grupos', label: 'Grupos', icon: Users },
   { to: '/ajustes', label: 'Ajustes', icon: Settings },
 ];
 
@@ -27,6 +31,24 @@ function navLinkClass(isActive: boolean): string {
 export function AppLayout() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [pendingInvites, setPendingInvites] = useState(0);
+
+  // Recuento de invitaciones pendientes para el aviso del menú; se refresca al
+  // cambiar de ruta (p. ej. al volver de la página de grupos tras aceptar una).
+  useEffect(() => {
+    let cancelled = false;
+    countPendingInvitations()
+      .then((count) => {
+        if (!cancelled) setPendingInvites(count);
+      })
+      .catch(() => {
+        if (!cancelled) setPendingInvites(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,12 +63,22 @@ export function AppLayout() {
             <Brand />
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-            {navItems.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => navLinkClass(isActive)}>
-                <Icon className="size-4" aria-hidden />
-                {label}
-              </NavLink>
-            ))}
+            {navItems.map(({ to, label, icon: Icon }) => {
+              const badge = to === '/grupos' && pendingInvites > 0;
+              return (
+                <NavLink key={to} to={to} className={({ isActive }) => navLinkClass(isActive)}>
+                  <span className="relative">
+                    <Icon className="size-4" aria-hidden />
+                    {badge && (
+                      <span className="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                        {pendingInvites}
+                      </span>
+                    )}
+                  </span>
+                  {label}
+                </NavLink>
+              );
+            })}
           </nav>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-coffee-500 sm:block">
@@ -75,21 +107,31 @@ export function AppLayout() {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-coffee-100 bg-white/95 backdrop-blur md:hidden"
       >
         <div className="flex py-1.5">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center text-[10px] font-medium transition-colors ${
-                  isActive ? 'text-coffee-800' : 'text-coffee-400'
-                }`
-              }
-            >
-              <Icon className="size-5" aria-hidden />
-              {label}
-            </NavLink>
-          ))}
+          {navItems.map(({ to, label, icon: Icon }) => {
+            const badge = to === '/grupos' && pendingInvites > 0;
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center text-[10px] font-medium transition-colors ${
+                    isActive ? 'text-coffee-800' : 'text-coffee-400'
+                  }`
+                }
+              >
+                <span className="relative">
+                  <Icon className="size-5" aria-hidden />
+                  {badge && (
+                    <span className="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                      {pendingInvites}
+                    </span>
+                  )}
+                </span>
+                {label}
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
     </div>
