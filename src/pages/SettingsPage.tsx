@@ -26,7 +26,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
 import { isUsernameAvailable } from '@/services/availabilityService';
 import { exportToCsv, exportToJson } from '@/utils/export';
-import type { ProfileSettings } from '@/types/profile';
+import { ESPRESSO_MG } from '@/types/coffee';
+import type { CaffeineLimitUnit, ProfileSettings } from '@/types/profile';
 
 const USERNAME_PATTERN = /^[a-z0-9_-]{3,30}$/;
 const SAVE_DEBOUNCE_MS = 700;
@@ -40,10 +41,22 @@ interface FieldSnapshot {
   workDays: number[];
   maxCoffees: string;
   maxCaffeine: string;
+  maxCaffeineCafes: string;
+  caffeineUnit: CaffeineLimitUnit;
 }
 
 function serialize(fields: FieldSnapshot): string {
   return JSON.stringify(fields);
+}
+
+/** mg equivalentes de un límite en cafés (redondeado a mg enteros). */
+function cafesToMg(cafes: number): number {
+  return Math.round(cafes * ESPRESSO_MG);
+}
+
+/** Cafés equivalentes de un límite en mg, ajustados al medio café más cercano. */
+function mgToCafes(mg: number): number {
+  return Math.round((mg / ESPRESSO_MG) * 2) / 2;
 }
 
 function validateFields(fields: FieldSnapshot):
@@ -66,9 +79,27 @@ function validateFields(fields: FieldSnapshot):
   if (parsedMax !== null && (!Number.isInteger(parsedMax) || parsedMax < 1)) {
     return { error: 'El máximo de bebidas debe ser un número entero mayor que cero.' };
   }
-  const parsedMaxCaffeine = fields.maxCaffeine.trim() === '' ? null : Number(fields.maxCaffeine);
-  if (parsedMaxCaffeine !== null && (!Number.isInteger(parsedMaxCaffeine) || parsedMaxCaffeine < 1)) {
-    return { error: 'El máximo de cafeína debe ser un número entero de mg mayor que cero.' };
+  // El límite de cafeína se guarda siempre en mg; en modo cafés se convierte
+  // (1 café = un espresso) y solo se admiten valores enteros o acabados en ,5.
+  let parsedMaxCaffeine: number | null;
+  if (fields.caffeineUnit === 'cafes') {
+    const raw = fields.maxCaffeineCafes.trim();
+    const parsed = raw === '' ? null : Number(raw.replace(',', '.'));
+    if (
+      parsed !== null &&
+      (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed * 2))
+    ) {
+      return {
+        error: 'El límite en cafés debe ser un número mayor que cero, entero o acabado en ,5.',
+      };
+    }
+    parsedMaxCaffeine = parsed === null ? null : cafesToMg(parsed);
+  } else {
+    const parsed = fields.maxCaffeine.trim() === '' ? null : Number(fields.maxCaffeine);
+    if (parsed !== null && (!Number.isInteger(parsed) || parsed < 1)) {
+      return { error: 'El máximo de cafeína debe ser un número entero de mg mayor que cero.' };
+    }
+    parsedMaxCaffeine = parsed;
   }
   return { normalizedUsername, parsedMax, parsedMaxCaffeine };
 }
@@ -85,6 +116,8 @@ export default function SettingsPage() {
   const [workDays, setWorkDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [maxCoffees, setMaxCoffees] = useState('');
   const [maxCaffeine, setMaxCaffeine] = useState('');
+  const [maxCaffeineCafes, setMaxCaffeineCafes] = useState('');
+  const [caffeineUnit, setCaffeineUnit] = useState<CaffeineLimitUnit>('cafes');
   const [isPublic, setIsPublic] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
   const [showCharts, setShowCharts] = useState(true);
@@ -119,7 +152,12 @@ export default function SettingsPage() {
     setWorkEnd(profile.workEnd);
     setWorkDays(profile.workDays);
     setMaxCoffees(profile.maxDailyCoffees !== null ? String(profile.maxDailyCoffees) : '');
-    setMaxCaffeine(profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '');
+    const initialMg = profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '';
+    const initialCafes =
+      profile.maxDailyCaffeine !== null ? String(mgToCafes(profile.maxDailyCaffeine)) : '';
+    setMaxCaffeine(initialMg);
+    setMaxCaffeineCafes(initialCafes);
+    setCaffeineUnit(profile.caffeineLimitUnit);
     setIsPublic(profile.isPublic);
     setShowHistory(profile.showHistory);
     setShowCharts(profile.showCharts);
@@ -132,7 +170,9 @@ export default function SettingsPage() {
       workEnd: profile.workEnd,
       workDays: profile.workDays,
       maxCoffees: profile.maxDailyCoffees !== null ? String(profile.maxDailyCoffees) : '',
-      maxCaffeine: profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '',
+      maxCaffeine: initialMg,
+      maxCaffeineCafes: initialCafes,
+      caffeineUnit: profile.caffeineLimitUnit,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
@@ -177,6 +217,8 @@ export default function SettingsPage() {
       workDays,
       maxCoffees,
       maxCaffeine,
+      maxCaffeineCafes,
+      caffeineUnit,
     });
     if (snapshot === snapshotRef.current) return;
 
@@ -194,6 +236,8 @@ export default function SettingsPage() {
         workDays,
         maxCoffees,
         maxCaffeine,
+        maxCaffeineCafes,
+        caffeineUnit,
       });
       if ('error' in result) {
         setStatus('error');
@@ -211,6 +255,7 @@ export default function SettingsPage() {
           workDays,
           maxDailyCoffees: result.parsedMax,
           maxDailyCaffeine: result.parsedMaxCaffeine,
+          caffeineLimitUnit: caffeineUnit,
         });
         snapshotRef.current = snapshot;
         setStatus('saved');
@@ -223,11 +268,31 @@ export default function SettingsPage() {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayName, username, workStart, workEnd, workDays, maxCoffees, maxCaffeine]);
+  }, [displayName, username, workStart, workEnd, workDays, maxCoffees, maxCaffeine, maxCaffeineCafes, caffeineUnit]);
 
   if (!profile) return <Spinner label="Cargando ajustes..." />;
 
   const publicUrl = `${window.location.origin}${window.location.pathname}#/u/${username}`;
+
+  // Equivalencias en vivo para rellenar el campo inhabilitado del otro modo.
+  const parsedCafesInput = Number(maxCaffeineCafes.replace(',', '.'));
+  const mgEquivalent =
+    maxCaffeineCafes.trim() !== '' && Number.isFinite(parsedCafesInput) && parsedCafesInput > 0
+      ? String(cafesToMg(parsedCafesInput))
+      : '';
+  const parsedMgInput = Number(maxCaffeine);
+  const cafesEquivalent =
+    maxCaffeine.trim() !== '' && Number.isFinite(parsedMgInput) && parsedMgInput > 0
+      ? String(mgToCafes(parsedMgInput))
+      : '';
+
+  const handleCaffeineUnitChange = (unit: CaffeineLimitUnit) => {
+    if (unit === caffeineUnit) return;
+    // Al cambiar de modo, el campo que se activa hereda el equivalente del otro.
+    if (unit === 'cafes') setMaxCaffeineCafes(cafesEquivalent);
+    else setMaxCaffeine(mgEquivalent);
+    setCaffeineUnit(unit);
+  };
 
   const saveField = async (partial: Partial<ProfileSettings>) => {
     setStatus('saving');
@@ -344,16 +409,67 @@ export default function SettingsPage() {
               placeholder="Sin límite"
               hint="Déjalo vacío si no quieres un límite."
             />
-            <Input
-              label="Máximo recomendado de cafeína al día (mg)"
-              type="number"
-              min={1}
-              max={2000}
-              value={maxCaffeine}
-              onChange={(event) => setMaxCaffeine(event.target.value)}
-              placeholder="Sin límite (p. ej. 400)"
-              hint="Se suelen recomendar hasta 400 mg diarios. Déjalo vacío si no quieres un límite."
-            />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-coffee-800">
+                  Máximo recomendado de cafeína al día
+                </span>
+                <div
+                  className="inline-flex rounded-lg border border-coffee-200 bg-white p-0.5"
+                  role="tablist"
+                  aria-label="Unidad del límite de cafeína"
+                >
+                  {(
+                    [
+                      ['cafes', 'Cafés'],
+                      ['mg', 'mg/día'],
+                    ] as const
+                  ).map(([unit, label]) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      role="tab"
+                      aria-selected={caffeineUnit === unit}
+                      onClick={() => handleCaffeineUnitChange(unit)}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        caffeineUnit === unit
+                          ? 'bg-coffee-600 text-white'
+                          : 'text-coffee-500 hover:bg-coffee-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  label="Cafés"
+                  type="number"
+                  min={0.5}
+                  max={30}
+                  step={0.5}
+                  value={caffeineUnit === 'cafes' ? maxCaffeineCafes : cafesEquivalent}
+                  onChange={(event) => setMaxCaffeineCafes(event.target.value)}
+                  disabled={caffeineUnit !== 'cafes'}
+                  placeholder="Sin límite (p. ej. 3,5)"
+                />
+                <Input
+                  label="mg/día"
+                  type="number"
+                  min={1}
+                  max={2000}
+                  value={caffeineUnit === 'mg' ? maxCaffeine : mgEquivalent}
+                  onChange={(event) => setMaxCaffeine(event.target.value)}
+                  disabled={caffeineUnit !== 'mg'}
+                  placeholder="Sin límite (p. ej. 400)"
+                />
+              </div>
+              <p className="text-xs text-coffee-400">
+                Un café equivale a {ESPRESSO_MG} mg de cafeína. Se suelen recomendar hasta 400 mg
+                diarios. Déjalo vacío si no quieres un límite.
+              </p>
+            </div>
           </div>
         </Card>
 

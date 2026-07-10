@@ -1,3 +1,6 @@
+/** Unidad en la que el usuario expresa su límite diario de cafeína. */
+export type CaffeineLimitUnit = 'cafes' | 'mg';
+
 /** Perfil de usuario con su configuración personal y de privacidad. */
 export interface Profile {
   id: string;
@@ -9,10 +12,12 @@ export interface Profile {
   workEnd: string;
   /** Días laborables en formato ISO: 1 = lunes ... 7 = domingo. */
   workDays: number[];
-  /** Máximo recomendado de cafés al día; null si no está configurado. */
+  /** Máximo recomendado de bebidas al día; null si no está configurado. */
   maxDailyCoffees: number | null;
-  /** Máximo recomendado de cafés con cafeína al día; null si no está configurado. */
+  /** Máximo recomendado de cafeína al día en mg; null si no está configurado. */
   maxDailyCaffeine: number | null;
+  /** Modo en el que se introduce y muestra el límite de cafeína. */
+  caffeineLimitUnit: CaffeineLimitUnit;
   isPublic: boolean;
   showHistory: boolean;
   showCharts: boolean;

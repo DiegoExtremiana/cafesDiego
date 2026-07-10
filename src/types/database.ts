@@ -14,6 +14,7 @@ export type ProfileRow = {
   work_days: number[];
   max_daily_coffees: number | null;
   max_daily_caffeine: number | null;
+  caffeine_limit_unit: string;
   is_public: boolean;
   show_history: boolean;
   show_charts: boolean;
@@ -22,7 +23,10 @@ export type ProfileRow = {
   created_at: string;
 };
 
-export type ProfileInsert = Omit<ProfileRow, 'created_at'> & { created_at?: string };
+export type ProfileInsert = Omit<ProfileRow, 'created_at' | 'caffeine_limit_unit'> & {
+  created_at?: string;
+  caffeine_limit_unit?: string;
+};
 
 export type ProfileUpdate = Partial<Omit<ProfileRow, 'id' | 'created_at'>>;
 

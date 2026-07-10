@@ -73,11 +73,19 @@ export default function DashboardPage() {
           </div>
           <div>
             {profile?.maxDailyCaffeine != null ? (
-              <ProgressBar
-                value={stats.todayMg}
-                max={profile.maxDailyCaffeine}
-                label="Cafeína (mg)"
-              />
+              profile.caffeineLimitUnit === 'cafes' ? (
+                <ProgressBar
+                  value={espressoEquivalent(stats.todayMg)}
+                  max={espressoEquivalent(profile.maxDailyCaffeine)}
+                  label="Cafeína (cafés)"
+                />
+              ) : (
+                <ProgressBar
+                  value={stats.todayMg}
+                  max={profile.maxDailyCaffeine}
+                  label="Cafeína (mg)"
+                />
+              )
             ) : (
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-coffee-600">

@@ -16,8 +16,11 @@ create table public.profiles (
   work_days smallint[] not null default '{1,2,3,4,5}',
   -- Máximo recomendado de cafés al día (null = sin límite configurado)
   max_daily_coffees smallint check (max_daily_coffees is null or max_daily_coffees > 0),
-  -- Máximo recomendado de cafés con cafeína al día (null = sin límite configurado)
+  -- Máximo recomendado de cafeína al día en mg (null = sin límite configurado)
   max_daily_caffeine smallint check (max_daily_caffeine is null or max_daily_caffeine > 0),
+  -- Unidad en la que el usuario expresa el límite de cafeína: 'cafes' o 'mg'
+  caffeine_limit_unit text not null default 'cafes'
+    check (caffeine_limit_unit in ('cafes', 'mg')),
   -- Perfil público y flags de privacidad
   is_public boolean not null default false,
   show_history boolean not null default true,
