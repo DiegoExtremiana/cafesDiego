@@ -129,27 +129,6 @@ export function CoffeeTypeIcon({ type, className = 'size-4' }: CoffeeTypeIconPro
           <circle cx="11.4" cy="17" r="0.6" fill="currentColor" stroke="none" />
         </svg>
       );
-    case 'cerveza':
-      // Jarra con espuma y vetas de vidrio: no cuenta como café.
-      return (
-        <svg {...common}>
-          <path d={CUP} />
-          <path d={HANDLE} />
-          <circle cx="8.5" cy="7.2" r="1.1" fill="currentColor" stroke="none" />
-          <circle cx="11.5" cy="6.4" r="1.3" fill="currentColor" stroke="none" />
-          <circle cx="14.5" cy="7.2" r="1.1" fill="currentColor" stroke="none" />
-          <path d="M9.5 12v4.5M12 12v4.5M14.5 12v4.5" strokeWidth={1.4} />
-        </svg>
-      );
-    case 'vino':
-      // Copa de vino con el cáliz medio lleno.
-      return (
-        <svg {...common}>
-          <path d="M8 4.5h8c0 4.2-1.7 7-4 7s-4-2.8-4-7Z" />
-          <path d="M8.4 7.5h7.2c-.7 2.5-2 4-3.6 4s-2.9-1.5-3.6-4Z" fill="currentColor" stroke="none" fillOpacity={0.6} />
-          <path d="M12 11.5v6M9 19.5h6" strokeWidth={1.6} />
-        </svg>
-      );
     case 'zumo':
       // Vaso con pajita y zumo hasta la mitad.
       return (
@@ -157,14 +136,6 @@ export function CoffeeTypeIcon({ type, className = 'size-4' }: CoffeeTypeIconPro
           <path d="M8.5 6.5l1 13.2a1.3 1.3 0 0 0 1.3 1.1h2.4a1.3 1.3 0 0 0 1.3-1.1l1-13.2h-7Z" />
           <path d="M9.3 12.5h5.4l-.5 6.6a.6.6 0 0 1-.6.6h-3.2a.6.6 0 0 1-.6-.6l-.5-6.6Z" fill="currentColor" stroke="none" fillOpacity={0.45} />
           <path d="M13.2 6.5l2-4" strokeWidth={1.4} />
-        </svg>
-      );
-    case 'agua':
-      // Gota de agua.
-      return (
-        <svg {...common}>
-          <path d="M12 4.5c3 3.6 5 6.5 5 9.1a5 5 0 1 1-10 0c0-2.6 2-5.5 5-9.1Z" />
-          <path d="M9.8 14.5a2.6 2.6 0 0 0 1.8 2.4" strokeWidth={1.3} />
         </svg>
       );
     case 'leche':

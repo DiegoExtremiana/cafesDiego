@@ -10,10 +10,7 @@ export const COFFEE_TYPES = [
   'te_verde',
   'matcha',
   'cola',
-  'cerveza',
-  'vino',
   'zumo',
-  'agua',
   'leche',
   'infusion',
 ] as const;
@@ -32,10 +29,7 @@ export const COFFEE_TYPE_LABELS: Record<CoffeeType, string> = {
   te_verde: 'Té verde',
   matcha: 'Matcha',
   cola: 'Cola',
-  cerveza: 'Cerveza',
-  vino: 'Vino',
   zumo: 'Zumo',
-  agua: 'Agua',
   leche: 'Leche',
   infusion: 'Infusión',
 };
@@ -53,10 +47,7 @@ export const COFFEE_TYPE_VALUES: Record<CoffeeType, number> = {
   te_verde: 0.3,
   matcha: 0.8,
   cola: 0.3,
-  cerveza: 0,
-  vino: 0,
   zumo: 0,
-  agua: 0,
   leche: 0,
   infusion: 0,
 };
@@ -64,7 +55,7 @@ export const COFFEE_TYPE_VALUES: Record<CoffeeType, number> = {
 /**
  * Tipos restringidos a un estado del interruptor de cafeína: las bebidas con
  * cafeína (energética, tés, cola) solo aparecen con él activado y las demás
- * (cerveza, vino, zumo...) solo sin él. Los cafés valen en ambos estados.
+ * (zumo, leche, infusión) solo sin él. Los cafés valen en ambos estados.
  */
 const CAFFEINE_RESTRICTED_TYPES: Partial<Record<CoffeeType, boolean>> = {
   energetica: true,
@@ -72,10 +63,7 @@ const CAFFEINE_RESTRICTED_TYPES: Partial<Record<CoffeeType, boolean>> = {
   te_verde: true,
   matcha: true,
   cola: true,
-  cerveza: false,
-  vino: false,
   zumo: false,
-  agua: false,
   leche: false,
   infusion: false,
 };

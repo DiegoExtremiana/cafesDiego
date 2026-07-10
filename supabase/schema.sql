@@ -41,7 +41,7 @@ create table public.coffees (
     check (type in (
       'espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro',
       'energetica', 'te_negro', 'te_verde', 'matcha', 'cola',
-      'cerveza', 'vino', 'zumo', 'agua', 'leche', 'infusion'
+      'zumo', 'leche', 'infusion'
     )),
   has_caffeine boolean not null default true,
   created_at timestamptz not null default now()
