@@ -25,6 +25,20 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
 
+  // Bloquea el scroll de la página mientras el modal está abierto, compensando
+  // el ancho de la barra de scroll para que el contenido no salte.
+  useEffect(() => {
+    if (!open) return;
+    const { overflow, paddingRight } = document.body.style;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    return () => {
+      document.body.style.overflow = overflow;
+      document.body.style.paddingRight = paddingRight;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
