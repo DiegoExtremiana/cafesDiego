@@ -26,7 +26,7 @@ interface CoffeeDetailsModalProps {
 const TYPE_GROUPS: { label: string; types: CoffeeType[] }[] = [
   { label: 'Café', types: ['espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro'] },
   { label: 'Té', types: ['te_negro', 'te_verde', 'matcha', 'infusion'] },
-  { label: 'Bebidas', types: ['energetica', 'cola', 'zumo', 'leche'] },
+  { label: 'Bebidas', types: ['energetica', 'cola', 'zumo', 'leche', 'cerveza'] },
 ];
 
 const INITIAL_EXPANDED: Record<string, boolean> = { Café: true, Té: false, Bebidas: false };

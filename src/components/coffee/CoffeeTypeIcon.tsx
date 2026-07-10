@@ -156,6 +156,15 @@ export function CoffeeTypeIcon({ type, className = 'size-4' }: CoffeeTypeIconPro
           <path d="M10 3.2c0 1-.8 1-.8 2s.8 1 .8 2M13.8 3.2c0 1-.8 1-.8 2s.8 1 .8 2" strokeWidth={1.3} />
         </svg>
       );
+    case 'cerveza':
+      // Botellín con cuello, etiqueta y chapa.
+      return (
+        <svg {...common}>
+          <path d="M10 2.5h4" strokeWidth={1.6} />
+          <path d="M10.3 2.8v2.1c0 .8-.4 1.3-1 1.9c-.7.7-1.1 1.4-1.1 2.5v10.3a1.5 1.5 0 0 0 1.5 1.4h4.6a1.5 1.5 0 0 0 1.5-1.4V9.3c0-1.1-.4-1.8-1.1-2.5c-.6-.6-1-1.1-1-1.9V2.8" />
+          <rect x="9.2" y="12" width="5.6" height="4.6" rx="0.6" fill="currentColor" stroke="none" fillOpacity={0.85} />
+        </svg>
+      );
     case 'otro':
     default:
       // Contorno discontinuo: tipo sin especificar.

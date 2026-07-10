@@ -13,6 +13,7 @@ export const COFFEE_TYPES = [
   'zumo',
   'leche',
   'infusion',
+  'cerveza',
 ] as const;
 
 export type CoffeeType = (typeof COFFEE_TYPES)[number];
@@ -32,6 +33,7 @@ export const COFFEE_TYPE_LABELS: Record<CoffeeType, string> = {
   zumo: 'Zumo',
   leche: 'Leche',
   infusion: 'Infusión',
+  cerveza: 'Cerveza',
 };
 
 /**
@@ -54,6 +56,7 @@ export const COFFEE_TYPE_CAFFEINE_MG: Record<CoffeeType, number> = {
   zumo: 0,
   leche: 0,
   infusion: 0,
+  cerveza: 0,
 };
 
 /** Cafeína de un espresso: referencia de la equivalencia visual "≈ N espressos". */
@@ -73,6 +76,7 @@ const CAFFEINE_RESTRICTED_TYPES: Partial<Record<CoffeeType, boolean>> = {
   zumo: false,
   leche: false,
   infusion: false,
+  cerveza: false,
 };
 
 /** Tipos seleccionables para un estado del interruptor de cafeína. */
