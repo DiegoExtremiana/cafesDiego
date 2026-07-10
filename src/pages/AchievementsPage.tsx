@@ -12,7 +12,9 @@ import {
 export default function AchievementsPage() {
   const { coffees, loading } = useCoffees();
   const achievements = useMemo(() => computeAchievements(coffees), [coffees]);
-  const achievedCount = achievements.filter((achievement) => achievement.achieved).length;
+  // Cada nivel completado cuenta como conseguido: sumamos niveles, no logros.
+  const levelsDone = achievements.reduce((sum, achievement) => sum + achievement.level, 0);
+  const levelsTotal = achievements.reduce((sum, achievement) => sum + achievement.maxLevel, 0);
   const [collapsed, setCollapsed] = useState<Record<AchievementCategory, boolean>>({
     cafetero: false,
     zero: false,
@@ -26,14 +28,15 @@ export default function AchievementsPage() {
         <h1 className="text-xl font-bold text-coffee-900">Logros</h1>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-coffee-100 px-3 py-1 text-sm font-medium text-coffee-700">
           <Trophy className="size-4 text-amber-500" aria-hidden />
-          {achievedCount} de {achievements.length}
+          {levelsDone} de {levelsTotal} niveles
         </span>
       </div>
 
       {ACHIEVEMENT_CATEGORIES.map(({ key, label }) => {
         const group = achievements.filter((achievement) => achievement.category === key);
         if (group.length === 0) return null;
-        const groupAchieved = group.filter((achievement) => achievement.achieved).length;
+        const groupLevelsDone = group.reduce((sum, achievement) => sum + achievement.level, 0);
+        const groupLevelsTotal = group.reduce((sum, achievement) => sum + achievement.maxLevel, 0);
         const isOpen = !collapsed[key];
         return (
           <section key={key}>
@@ -51,7 +54,7 @@ export default function AchievementsPage() {
               />
               <h2 className="text-base font-semibold text-coffee-900">{label}</h2>
               <span className="rounded-full bg-coffee-100 px-2 py-0.5 text-xs font-medium text-coffee-500">
-                {groupAchieved}/{group.length}
+                {groupLevelsDone}/{groupLevelsTotal} niveles
               </span>
               <span className="h-px flex-1 bg-coffee-100" />
             </button>

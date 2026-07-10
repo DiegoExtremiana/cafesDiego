@@ -42,18 +42,18 @@ export function AchievementCard({ achievement }: { achievement: Achievement }) {
   const Icon = icons[achievement.icon];
   const { current, target } = achievement.progress;
   const percent = target > 0 ? Math.round((current / target) * 100) : 0;
-  const { maxed, started, level, maxLevel } = achievement;
+  const { achieved, maxed, level, maxLevel } = achievement;
 
   return (
     <Card
       className={`flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-0.5 ${
-        started ? '' : 'opacity-70'
+        achieved ? '' : 'opacity-70'
       }`}
     >
       <div className="flex items-center gap-3">
         <span
           className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${
-            started ? 'bg-coffee-600 text-white shadow-sm' : 'bg-coffee-100 text-coffee-300'
+            achieved ? 'bg-coffee-600 text-white shadow-sm' : 'bg-coffee-100 text-coffee-300'
           }`}
         >
           <Icon className="size-5" aria-hidden />
@@ -80,11 +80,13 @@ export function AchievementCard({ achievement }: { achievement: Achievement }) {
         </p>
       ) : (
         <div>
-          <div className="mb-1 flex justify-between text-[11px] text-coffee-400">
-            <span>
+          <div className="mb-1 flex items-center justify-between text-[11px]">
+            <span className={achieved ? 'font-medium text-emerald-600' : 'text-coffee-400'}>
+              {achieved ? `Nivel ${level} conseguido` : 'Sin empezar'}
+            </span>
+            <span className="text-coffee-400">
               {formatInteger(current)} / {formatInteger(target)}
             </span>
-            <span>{percent}%</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-coffee-100">
             <div
