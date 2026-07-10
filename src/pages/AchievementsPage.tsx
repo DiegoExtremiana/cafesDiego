@@ -56,7 +56,7 @@ export default function AchievementsPage() {
               <span className="h-px flex-1 bg-coffee-100" />
             </button>
             {isOpen && (
-              <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {group.map((achievement) => (
                   <AchievementCard key={achievement.id} achievement={achievement} />
                 ))}
