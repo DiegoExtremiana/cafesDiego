@@ -39,10 +39,12 @@ export interface Achievement {
   level: number;
   /** Número total de niveles del logro. */
   maxLevel: number;
-  /** true cuando se han completado todos los niveles. */
+  /** true cuando se han completado todos los niveles (logro conseguido). */
   maxed: boolean;
-  /** true en cuanto se completa el primer nivel (logro desbloqueado). */
+  /** Alias de `maxed`: el logro se consigue al completarlo del todo. */
   achieved: boolean;
+  /** true en cuanto se completa el primer nivel (logro empezado). */
+  started: boolean;
   /** Progreso hacia el siguiente nivel (lleno cuando está al máximo). */
   progress: { current: number; target: number };
 }
@@ -166,7 +168,8 @@ function resolve(def: AchievementDef, current: number): Achievement {
     level,
     maxLevel,
     maxed,
-    achieved: level >= 1,
+    achieved: maxed,
+    started: level >= 1,
     progress: { current: Math.min(current, target), target },
   };
 }

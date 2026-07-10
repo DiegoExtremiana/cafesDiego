@@ -25,8 +25,10 @@ export function StatCard({ icon, label, value, sub, tone = 'default' }: StatCard
         </span>
         <div className="min-w-0">
           <p className="text-xs font-medium text-coffee-400">{label}</p>
-          <p className={`truncate text-xl font-bold tabular-nums ${toneClasses[tone]}`}>{value}</p>
-          {sub && <p className="text-xs text-coffee-400">{sub}</p>}
+          <p className={`text-balance break-words text-lg font-bold leading-tight tabular-nums sm:text-xl ${toneClasses[tone]}`}>
+            {value}
+          </p>
+          {sub && <p className="mt-0.5 text-xs text-coffee-400">{sub}</p>}
         </div>
       </div>
     </Card>

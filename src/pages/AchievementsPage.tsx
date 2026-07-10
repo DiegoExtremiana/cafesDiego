@@ -55,13 +55,19 @@ export default function AchievementsPage() {
               </span>
               <span className="h-px flex-1 bg-coffee-100" />
             </button>
-            {isOpen && (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {group.map((achievement) => (
-                  <AchievementCard key={achievement.id} achievement={achievement} />
-                ))}
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {group.map((achievement) => (
+                    <AchievementCard key={achievement.id} achievement={achievement} />
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
           </section>
         );
       })}

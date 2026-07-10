@@ -42,18 +42,18 @@ export function AchievementCard({ achievement }: { achievement: Achievement }) {
   const Icon = icons[achievement.icon];
   const { current, target } = achievement.progress;
   const percent = target > 0 ? Math.round((current / target) * 100) : 0;
-  const { achieved, maxed, level, maxLevel } = achievement;
+  const { maxed, started, level, maxLevel } = achievement;
 
   return (
     <Card
       className={`flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-0.5 ${
-        achieved ? '' : 'opacity-70'
+        started ? '' : 'opacity-70'
       }`}
     >
       <div className="flex items-center gap-3">
         <span
           className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${
-            achieved ? 'bg-coffee-600 text-white shadow-sm' : 'bg-coffee-100 text-coffee-300'
+            started ? 'bg-coffee-600 text-white shadow-sm' : 'bg-coffee-100 text-coffee-300'
           }`}
         >
           <Icon className="size-5" aria-hidden />
