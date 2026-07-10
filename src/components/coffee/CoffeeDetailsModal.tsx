@@ -19,14 +19,14 @@ interface CoffeeDetailsModalProps {
 }
 
 /**
- * Grupos del selector, separados visualmente por una línea fina:
- * cafés (siempre visibles), tés e infusiones, y otras bebidas.
+ * Grupos del selector, separados por una línea fina con su etiqueta:
+ * café (siempre visible), té, y otras bebidas.
  * Los grupos 2 y 3 dependen del estado del interruptor de cafeína.
  */
-const TYPE_GROUPS: CoffeeType[][] = [
-  ['espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro'],
-  ['te_negro', 'te_verde', 'matcha', 'infusion'],
-  ['energetica', 'cola', 'zumo', 'leche'],
+const TYPE_GROUPS: { label: string; types: CoffeeType[] }[] = [
+  { label: 'Café', types: ['espresso', 'americano', 'cortado', 'capuchino', 'latte', 'otro'] },
+  { label: 'Té', types: ['te_negro', 'te_verde', 'matcha', 'infusion'] },
+  { label: 'Bebidas', types: ['energetica', 'cola', 'zumo', 'leche'] },
 ];
 
 /** Duración del desvanecimiento de las opciones que se van al cambiar la cafeína. */
@@ -89,13 +89,19 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
           <p className="mb-2 text-sm font-medium text-coffee-700">Tipo de bebida</p>
           <div className="flex flex-col">
             {TYPE_GROUPS.map((group, groupIndex) => {
-              const groupTypes = group.filter((value) => availableTypes.includes(value));
+              const groupTypes = group.types.filter((value) => availableTypes.includes(value));
               if (groupTypes.length === 0) return null;
               // Los grupos 2 y 3 son los que entran y salen con el interruptor.
               const swappable = groupIndex > 0;
               return (
-                <div key={groupIndex}>
-                  {groupIndex > 0 && <div className="my-2.5 h-px bg-coffee-100" />}
+                <div key={group.label}>
+                  <div className={`mb-2 flex items-center gap-2 ${groupIndex > 0 ? 'mt-3' : ''}`}>
+                    <span className="h-px flex-1 bg-coffee-100" />
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-coffee-400">
+                      {group.label}
+                    </span>
+                    <span className="h-px flex-1 bg-coffee-100" />
+                  </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {groupTypes.map((value) => (
                       <button
