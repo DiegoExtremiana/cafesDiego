@@ -1,5 +1,5 @@
 /** Estadísticas curiosas calculadas sobre todo el histórico. */
-import type { Coffee } from '@/types/coffee';
+import { isCoffeeType, type Coffee } from '@/types/coffee';
 import { formatTime, minutesBetween, toDateKey } from './dates';
 import { average, groupByDay } from './stats';
 
@@ -110,12 +110,16 @@ export function computeCuriousStats(coffees: Coffee[]): CuriousStats {
   const allIntervals: number[] = [];
 
   for (const [dateKey, group] of groups) {
-    // Día con más y menos cafés.
-    if (!stats.maxDay || group.length > stats.maxDay.count) {
-      stats.maxDay = { dateKey, count: group.length };
-    }
-    if (!stats.minDay || group.length < stats.minDay.count) {
-      stats.minDay = { dateKey, count: group.length };
+    // Día con más y menos cafés: cuenta solo cafés (ni tés ni otras bebidas) y
+    // solo entre los días en los que hubo al menos un café.
+    const coffeeCount = group.filter(isCoffeeType).length;
+    if (coffeeCount > 0) {
+      if (!stats.maxDay || coffeeCount > stats.maxDay.count) {
+        stats.maxDay = { dateKey, count: coffeeCount };
+      }
+      if (!stats.minDay || coffeeCount < stats.minDay.count) {
+        stats.minDay = { dateKey, count: coffeeCount };
+      }
     }
 
     // Primer café más temprano y último café más tarde.

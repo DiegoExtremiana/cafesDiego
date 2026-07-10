@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { dateKeyToDate, formatDate, formatDuration, hourLabel } from '@/utils/dates';
-import { coffeeLabel } from '@/utils/format';
+import { coffeeLabel, drinkLabel } from '@/utils/format';
 import type { CuriousStats } from '@/utils/curiousStats';
 
 function dayLabel(dateKey: string): string {
@@ -30,17 +30,17 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
       {stats.earliestCoffee && (
         <StatCard
           icon={<Sunrise className={iconClass} aria-hidden />}
-          label="Café más temprano"
+          label="Bebida más temprana"
           value={stats.earliestCoffee.time}
-          sub={dayLabel(stats.earliestCoffee.dateKey)}
+          sub={`Cualquier bebida · ${dayLabel(stats.earliestCoffee.dateKey)}`}
         />
       )}
       {stats.latestCoffee && (
         <StatCard
           icon={<Moon className={iconClass} aria-hidden />}
-          label="Café más tarde"
+          label="Bebida más tarde"
           value={stats.latestCoffee.time}
-          sub={dayLabel(stats.latestCoffee.dateKey)}
+          sub={`Cualquier bebida · ${dayLabel(stats.latestCoffee.dateKey)}`}
         />
       )}
       {stats.maxDay && (
@@ -48,7 +48,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Flame className={iconClass} aria-hidden />}
           label="Día con más cafés"
           value={`${stats.maxDay.count} ${coffeeLabel(stats.maxDay.count)}`}
-          sub={dayLabel(stats.maxDay.dateKey)}
+          sub={`Solo cafés · ${dayLabel(stats.maxDay.dateKey)}`}
           tone="negative"
         />
       )}
@@ -57,7 +57,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Leaf className={iconClass} aria-hidden />}
           label="Día con menos cafés"
           value={`${stats.minDay.count} ${coffeeLabel(stats.minDay.count)}`}
-          sub={dayLabel(stats.minDay.dateKey)}
+          sub={`Solo cafés · ${dayLabel(stats.minDay.dateKey)}`}
           tone="positive"
         />
       )}
@@ -66,7 +66,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Heart className={iconClass} aria-hidden />}
           label="Hora favorita"
           value={hourLabel(stats.favoriteHour.hour)}
-          sub={`${stats.favoriteHour.count} ${coffeeLabel(stats.favoriteHour.count)}`}
+          sub={`${stats.favoriteHour.count} ${drinkLabel(stats.favoriteHour.count)} en total`}
         />
       )}
       {stats.leastCommonHour && (
@@ -74,7 +74,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Clock3 className={iconClass} aria-hidden />}
           label="Hora menos habitual"
           value={hourLabel(stats.leastCommonHour.hour)}
-          sub={`${stats.leastCommonHour.count} ${coffeeLabel(stats.leastCommonHour.count)}`}
+          sub={`${stats.leastCommonHour.count} ${drinkLabel(stats.leastCommonHour.count)} en total`}
         />
       )}
       {stats.avgIntervalMinutes !== null && (
@@ -82,7 +82,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Hourglass className={iconClass} aria-hidden />}
           label="Intervalo medio"
           value={formatDuration(stats.avgIntervalMinutes)}
-          sub="Entre cafés del mismo día"
+          sub="Entre bebidas del mismo día"
         />
       )}
       {stats.shortestInterval && (
@@ -90,7 +90,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Zap className={iconClass} aria-hidden />}
           label="Intervalo más corto"
           value={formatDuration(stats.shortestInterval.minutes)}
-          sub={dayLabel(stats.shortestInterval.dateKey)}
+          sub={`Entre bebidas · ${dayLabel(stats.shortestInterval.dateKey)}`}
         />
       )}
       {stats.longestInterval && (
@@ -98,7 +98,7 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
           icon={<Turtle className={iconClass} aria-hidden />}
           label="Intervalo más largo"
           value={formatDuration(stats.longestInterval.minutes)}
-          sub={dayLabel(stats.longestInterval.dateKey)}
+          sub={`Entre bebidas · ${dayLabel(stats.longestInterval.dateKey)}`}
         />
       )}
       {stats.mostConsistentDay && (
@@ -120,17 +120,17 @@ export function CuriousStatsGrid({ stats }: { stats: CuriousStats }) {
       {stats.earliestFirstCoffeeDay && (
         <StatCard
           icon={<AlarmClock className={iconClass} aria-hidden />}
-          label="Primer café más temprano"
+          label="Primera bebida más temprana"
           value={stats.earliestFirstCoffeeDay.time}
-          sub={dayLabel(stats.earliestFirstCoffeeDay.dateKey)}
+          sub={`La primera del día · ${dayLabel(stats.earliestFirstCoffeeDay.dateKey)}`}
         />
       )}
       {stats.latestLastCoffeeDay && (
         <StatCard
           icon={<MoonStar className={iconClass} aria-hidden />}
-          label="Último café más tarde"
+          label="Última bebida más tarde"
           value={stats.latestLastCoffeeDay.time}
-          sub={dayLabel(stats.latestLastCoffeeDay.dateKey)}
+          sub={`La última del día · ${dayLabel(stats.latestLastCoffeeDay.dateKey)}`}
         />
       )}
     </div>

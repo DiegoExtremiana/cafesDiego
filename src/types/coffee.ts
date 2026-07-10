@@ -62,6 +62,23 @@ export const COFFEE_TYPE_CAFFEINE_MG: Record<CoffeeType, number> = {
 /** Cafeína de un espresso: referencia de la equivalencia visual "≈ N espressos". */
 export const ESPRESSO_MG = COFFEE_TYPE_CAFFEINE_MG.espresso;
 
+/** Tipos del grupo "Café" (excluye tés y otras bebidas). */
+export const COFFEE_GROUP: readonly CoffeeType[] = [
+  'espresso',
+  'americano',
+  'cortado',
+  'capuchino',
+  'latte',
+  'otro',
+];
+
+const COFFEE_GROUP_SET: ReadonlySet<CoffeeType> = new Set(COFFEE_GROUP);
+
+/** true si la consumición es un café (no té, energética, refresco...). */
+export function isCoffeeType(coffee: Pick<Coffee, 'type'>): boolean {
+  return COFFEE_GROUP_SET.has(coffee.type);
+}
+
 /**
  * Tipos restringidos a un estado del interruptor de cafeína: las bebidas con
  * cafeína (energética, tés, cola) solo aparecen con él activado y las demás
