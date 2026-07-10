@@ -94,7 +94,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
           checked={hasCaffeine}
           onChange={handleCaffeineChange}
           label="Con cafeína"
-          // description="Desactiva si era descafeinado."
+          description=""
           activeLabel="Con cafeína"
           inactiveLabel="Sin cafeína"
           activeIcon={<Zap className="size-4" aria-hidden />}
