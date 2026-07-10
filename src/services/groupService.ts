@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Group, GroupInvitation, RankingEntry } from '@/types/group';
+import type { Group, GroupInvitation, RankingEntry, WeeklySeriesPoint } from '@/types/group';
 
 /** Zona horaria del navegador, para cortar día/semana en el servidor. */
 function clientTimezone(): string {
@@ -85,5 +85,24 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     todayDrinks: Number(row.today_drinks),
     weekDrinks: Number(row.week_drinks),
     totalDrinks: Number(row.total_drinks),
+  }));
+}
+
+export async function getGroupWeeklySeries(
+  groupId: string,
+  weeks = 26,
+): Promise<WeeklySeriesPoint[]> {
+  const { data, error } = await supabase.rpc('group_weekly_series', {
+    gid: groupId,
+    tz: clientTimezone(),
+    weeks,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    userId: row.user_id as string,
+    username: row.username as string,
+    displayName: row.display_name as string,
+    weekStart: row.week_start as string,
+    mg: Number(row.mg),
   }));
 }

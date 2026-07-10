@@ -20,6 +20,16 @@ export interface RankingEntry {
   totalDrinks: number;
 }
 
+/** Un punto (miembro × semana) de la serie semanal comparativa del grupo. */
+export interface WeeklySeriesPoint {
+  userId: string;
+  username: string;
+  displayName: string;
+  /** Lunes de la semana, clave YYYY-MM-DD. */
+  weekStart: string;
+  mg: number;
+}
+
 /** Invitación pendiente a un grupo. */
 export interface GroupInvitation {
   id: string;

@@ -280,6 +280,55 @@ as $$
   order by total_mg desc, p.username;
 $$;
 
+-- ---------- Serie semanal del grupo (para el gráfico comparativo) ----------
+-- Cafeína (mg) por semana de cada miembro en las últimas `weeks` semanas,
+-- rellenando con 0 las semanas sin registros. Semana ISO (lunes) en la zona
+-- horaria del cliente.
+create or replace function public.group_weekly_series(gid uuid, tz text, weeks int default 12)
+returns table (user_id uuid, username text, display_name text, week_start date, mg bigint)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  with members as (
+    select p.id, p.username, p.display_name
+    from public.group_members gm
+    join public.profiles p on p.id = gm.user_id
+    where gm.group_id = gid and public.is_group_member(gid, auth.uid())
+  ),
+  weeks_list as (
+    select generate_series(
+      date_trunc('week', now() at time zone tz)::date - ((greatest(weeks, 1) - 1) * 7),
+      date_trunc('week', now() at time zone tz)::date,
+      interval '7 days'
+    )::date as week_start
+  ),
+  grid as (
+    select m.id, m.username, m.display_name, w.week_start
+    from members m cross join weeks_list w
+  ),
+  agg as (
+    select
+      gm.user_id,
+      date_trunc('week', c.taken_at at time zone tz)::date as week_start,
+      sum(public.coffee_caffeine_mg(c.type, c.has_caffeine)) as mg
+    from public.group_members gm
+    join public.coffees c on c.user_id = gm.user_id
+    where gm.group_id = gid
+    group by gm.user_id, date_trunc('week', c.taken_at at time zone tz)::date
+  )
+  select
+    grid.id as user_id,
+    grid.username,
+    grid.display_name,
+    grid.week_start,
+    coalesce(agg.mg, 0)::bigint as mg
+  from grid
+  left join agg on agg.user_id = grid.id and agg.week_start = grid.week_start
+  order by grid.week_start, grid.username;
+$$;
+
 grant execute on function public.create_group(text) to authenticated;
 grant execute on function public.my_groups() to authenticated;
 grant execute on function public.invite_to_group(uuid, text) to authenticated;

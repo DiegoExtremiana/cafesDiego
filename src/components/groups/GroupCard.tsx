@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Crown, LogOut, Trash2, Trophy, UserPlus } from 'lucide-react';
+import { Crown, LineChart, LogOut, Trash2, Trophy, UserPlus } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { deleteGroup, getGroupRanking, inviteToGroup, leaveGroup } from '@/services/groupService';
+import { GroupComparisonChart } from './GroupComparisonChart';
+import {
+  deleteGroup,
+  getGroupRanking,
+  getGroupWeeklySeries,
+  inviteToGroup,
+  leaveGroup,
+} from '@/services/groupService';
 import { formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import { espressoEquivalent } from '@/types/coffee';
-import type { Group, RankingEntry } from '@/types/group';
+import type { Group, RankingEntry, WeeklySeriesPoint } from '@/types/group';
 
 type Metric = 'today' | 'week' | 'total';
 
@@ -38,6 +46,10 @@ export function GroupCard({ group, currentUserId, onChanged }: GroupCardProps) {
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [series, setSeries] = useState<WeeklySeriesPoint[] | null>(null);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
 
   const reloadId = useRef(0);
 
@@ -88,6 +100,18 @@ export function GroupCard({ group, currentUserId, onChanged }: GroupCardProps) {
     }
   };
 
+  const openComparison = () => {
+    setComparisonOpen(true);
+    if (series === null) {
+      setSeriesError(null);
+      getGroupWeeklySeries(group.id)
+        .then(setSeries)
+        .catch((err) =>
+          setSeriesError(err instanceof Error ? err.message : 'No se pudo cargar la comparativa.'),
+        );
+    }
+  };
+
   const handleRemove = async () => {
     try {
       if (isOwner) await deleteGroup(group.id);
@@ -120,20 +144,26 @@ export function GroupCard({ group, currentUserId, onChanged }: GroupCardProps) {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="inline-flex self-start rounded-xl border border-coffee-200 bg-white p-0.5">
-        {METRICS.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setMetric(key)}
-            aria-pressed={metric === key}
-            className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
-              metric === key ? 'bg-coffee-600 text-white' : 'text-coffee-500 hover:bg-coffee-50'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex rounded-xl border border-coffee-200 bg-white p-0.5">
+          {METRICS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMetric(key)}
+              aria-pressed={metric === key}
+              className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                metric === key ? 'bg-coffee-600 text-white' : 'text-coffee-500 hover:bg-coffee-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <Button type="button" variant="secondary" size="sm" onClick={openComparison}>
+          <LineChart className="size-3.5" aria-hidden />
+          Comparativa
+        </Button>
       </div>
 
       {ranking === null ? (
@@ -202,6 +232,30 @@ export function GroupCard({ group, currentUserId, onChanged }: GroupCardProps) {
           </p>
         )}
       </form>
+
+      <Modal
+        open={comparisonOpen}
+        title={`${group.name} · evolución semanal`}
+        onClose={() => setComparisonOpen(false)}
+        size="xl"
+      >
+        {seriesError ? (
+          <Alert variant="error">{seriesError}</Alert>
+        ) : series === null ? (
+          <Spinner label="Cargando comparativa..." />
+        ) : (
+          <>
+            <p className="mb-3 text-xs text-coffee-400">
+              Cafeína (mg) por semana de cada miembro. Tu línea aparece resaltada.
+            </p>
+            <div className="-mx-2 overflow-x-auto px-2">
+              <div style={{ minWidth: Math.max(560, new Set(series.map((p) => p.weekStart)).size * 44) }}>
+                <GroupComparisonChart points={series} currentUserId={currentUserId} />
+              </div>
+            </div>
+          </>
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={confirmingRemove}

@@ -143,6 +143,16 @@ export type Database = {
           total_drinks: number;
         }[];
       };
+      group_weekly_series: {
+        Args: { gid: string; tz: string; weeks?: number };
+        Returns: {
+          user_id: string;
+          username: string;
+          display_name: string;
+          week_start: string;
+          mg: number;
+        }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
