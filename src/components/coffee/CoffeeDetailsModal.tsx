@@ -29,7 +29,8 @@ const TYPE_GROUPS: { label: string; types: CoffeeType[] }[] = [
   { label: 'Bebidas', types: ['energetica', 'cola', 'zumo', 'leche', 'cerveza'] },
 ];
 
-const INITIAL_EXPANDED: Record<string, boolean> = { Café: true, Té: false, Bebidas: false };
+/** Grupo abierto al abrir el modal (acordeón: solo uno a la vez). */
+const INITIAL_GROUP = 'Café';
 
 /** Duración del desvanecimiento de las opciones que se van al cambiar la cafeína. */
 const SWAP_MS = 180;
@@ -43,7 +44,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
   const [displayCaffeine, setDisplayCaffeine] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(INITIAL_EXPANDED);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(INITIAL_GROUP);
   const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
     setHasCaffeine(true);
     setDisplayCaffeine(true);
     setLeaving(false);
-    setExpanded(INITIAL_EXPANDED);
+    setExpandedGroup(INITIAL_GROUP);
   }, [open]);
 
   useEffect(
@@ -93,7 +94,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
           checked={hasCaffeine}
           onChange={handleCaffeineChange}
           label="Con cafeína"
-          description="Desactiva si era descafeinado."
+          // description="Desactiva si era descafeinado."
           activeLabel="Con cafeína"
           inactiveLabel="Sin cafeína"
           activeIcon={<Zap className="size-4" aria-hidden />}
@@ -108,15 +109,13 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
               if (groupTypes.length === 0) return null;
               // Los grupos 2 y 3 son los que entran y salen con el interruptor.
               const swappable = groupIndex > 0;
-              const isOpen = expanded[group.label] ?? false;
+              const isOpen = expandedGroup === group.label;
               return (
                 <div key={group.label}>
                   <button
                     type="button"
                     aria-expanded={isOpen}
-                    onClick={() =>
-                      setExpanded((current) => ({ ...current, [group.label]: !isOpen }))
-                    }
+                    onClick={() => setExpandedGroup(isOpen ? null : group.label)}
                     className={`mb-2 flex w-full items-center gap-2 rounded-lg py-1 transition-colors hover:bg-coffee-50 ${
                       groupIndex > 0 ? 'mt-1.5' : ''
                     }`}
