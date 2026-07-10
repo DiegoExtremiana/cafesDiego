@@ -73,7 +73,7 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        <section className="mx-auto grid grid-cols-1 max-w-6xl items-center gap-10 px-4 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
           <div className="flex flex-col items-start gap-6 animate-slide-up">
             <span className="relative inline-flex rounded-2xl bg-coffee-600 p-5 text-white shadow-lg">
               <Coffee className="size-12" aria-hidden />

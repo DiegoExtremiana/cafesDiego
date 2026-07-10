@@ -388,7 +388,7 @@ export default function PublicProfilePage() {
 
             {profile.showCharts && (
               <>
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <ExpandableChart
                     title="Evolución diaria"
                     subtitle="Últimos 30 días"
@@ -483,7 +483,7 @@ export default function PublicProfilePage() {
                   <Trophy className="size-4 text-amber-500" aria-hidden />
                   Logros conseguidos ({unlockedAchievements.length})
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                   {unlockedAchievements.map((achievement) => (
                     <AchievementCard key={achievement.id} achievement={achievement} />
                   ))}

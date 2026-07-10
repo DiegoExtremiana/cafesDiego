@@ -284,7 +284,7 @@ export default function SettingsPage() {
 
       {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
           <div className="flex flex-col gap-4">
