@@ -1,5 +1,5 @@
-/** Preparación de datos para los gráficos, a partir de la lista de cafés. */
-import { coffeeValue, sumCoffeeValue, type Coffee } from '@/types/coffee';
+/** Preparación de datos para los gráficos; la unidad de las series es el mg de cafeína. */
+import { ESPRESSO_MG, caffeineMg, sumCaffeineMg, type Coffee } from '@/types/coffee';
 import {
   DAY_MS,
   addDays,
@@ -43,11 +43,11 @@ function monthsSinceFirst(coffees: Coffee[], now: Date): number {
   return (now.getFullYear() - takenAt.getFullYear()) * 12 + (now.getMonth() - takenAt.getMonth()) + 1;
 }
 
-/** Cafés por día en los últimos `days` días (incluye días a cero). `'all'` cubre todo el histórico. */
+/** Cafeína (mg) por día en los últimos `days` días (incluye días a cero). `'all'` cubre todo el histórico. */
 export function dailySeries(coffees: Coffee[], now: Date, days: number | 'all' = 30): SeriesPoint[] {
   const resolvedDays = days === 'all' ? Math.max(30, daysSinceFirst(coffees, now)) : days;
   const counts = new Map<string, number>();
-  for (const [key, group] of groupByDay(coffees)) counts.set(key, sumCoffeeValue(group));
+  for (const [key, group] of groupByDay(coffees)) counts.set(key, sumCaffeineMg(group));
 
   const points: SeriesPoint[] = [];
   for (let i = resolvedDays - 1; i >= 0; i--) {
@@ -58,14 +58,14 @@ export function dailySeries(coffees: Coffee[], now: Date, days: number | 'all' =
   return points;
 }
 
-/** Cafés por semana en las últimas `weeks` semanas. `'all'` cubre todo el histórico. */
+/** Cafeína (mg) por semana en las últimas `weeks` semanas. `'all'` cubre todo el histórico. */
 export function weeklySeries(coffees: Coffee[], now: Date, weeks: number | 'all' = 12): SeriesPoint[] {
   const resolvedWeeks =
     weeks === 'all' ? Math.max(12, Math.ceil(daysSinceFirst(coffees, now) / 7)) : weeks;
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toDateKey(startOfWeek(coffee.takenAt));
-    counts.set(key, (counts.get(key) ?? 0) + coffeeValue(coffee));
+    counts.set(key, (counts.get(key) ?? 0) + caffeineMg(coffee));
   }
 
   const points: SeriesPoint[] = [];
@@ -82,13 +82,13 @@ export function weeklySeries(coffees: Coffee[], now: Date, weeks: number | 'all'
   return points;
 }
 
-/** Cafés por mes en los últimos `months` meses. `'all'` cubre todo el histórico. */
+/** Cafeína (mg) por mes en los últimos `months` meses. `'all'` cubre todo el histórico. */
 export function monthlySeries(coffees: Coffee[], now: Date, months: number | 'all' = 12): SeriesPoint[] {
   const resolvedMonths = months === 'all' ? Math.max(12, monthsSinceFirst(coffees, now)) : months;
   const counts = new Map<string, number>();
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
-    counts.set(key, (counts.get(key) ?? 0) + coffeeValue(coffee));
+    counts.set(key, (counts.get(key) ?? 0) + caffeineMg(coffee));
   }
 
   const points: SeriesPoint[] = [];
@@ -100,12 +100,12 @@ export function monthlySeries(coffees: Coffee[], now: Date, months: number | 'al
   return points;
 }
 
-/** Distribución de cafés por hora del día (0 a 23). */
+/** Distribución de cafeína (mg) por hora del día (0 a 23). */
 export function hourlyDistribution(coffees: Coffee[]): SeriesPoint[] {
   const counts = Array.from({ length: 24 }, () => 0);
   for (const coffee of coffees) {
     const hour = coffee.takenAt.getHours();
-    counts[hour] = (counts[hour] ?? 0) + coffeeValue(coffee);
+    counts[hour] = (counts[hour] ?? 0) + caffeineMg(coffee);
   }
   return counts.map((count, hour) => ({
     key: String(hour),
@@ -137,14 +137,14 @@ export function intervalHistogram(coffees: Coffee[]): SeriesPoint[] {
   }));
 }
 
-/** Evolución del promedio de cafés por día registrado en cada mes. `'all'` cubre todo el histórico. */
+/** Evolución del promedio de mg de cafeína por día registrado en cada mes. `'all'` cubre todo el histórico. */
 export function monthlyAverageSeries(coffees: Coffee[], now: Date, months: number | 'all' = 12): SeriesPoint[] {
   const resolvedMonths = months === 'all' ? Math.max(12, monthsSinceFirst(coffees, now)) : months;
   const totals = new Map<string, { count: number; days: Set<string> }>();
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
     const entry = totals.get(key) ?? { count: 0, days: new Set<string>() };
-    entry.count += coffeeValue(coffee);
+    entry.count += caffeineMg(coffee);
     entry.days.add(toDateKey(coffee.takenAt));
     totals.set(key, entry);
   }
@@ -164,17 +164,20 @@ export function monthlyAverageSeries(coffees: Coffee[], now: Date, months: numbe
   return points;
 }
 
-/** Cafés con cafeína frente a descafeinados, en valor de cafés. */
+/**
+ * Bebidas con cafeína frente a sin cafeína, en unidades. Aquí no se usan mg:
+ * el desglose "sin cafeína" siempre valdría 0 mg por definición.
+ */
 export function caffeineBreakdown(coffees: Coffee[]): SeriesPoint[] {
   let caffeine = 0;
   let decaf = 0;
   for (const coffee of coffees) {
-    if (coffee.hasCaffeine) caffeine += coffeeValue(coffee);
-    else decaf += coffeeValue(coffee);
+    if (coffee.hasCaffeine) caffeine++;
+    else decaf++;
   }
   return [
-    { key: 'caffeine', label: 'Con cafeína', count: round1(caffeine) },
-    { key: 'decaf', label: 'Sin cafeína', count: round1(decaf) },
+    { key: 'caffeine', label: 'Con cafeína', count: caffeine },
+    { key: 'decaf', label: 'Sin cafeína', count: decaf },
   ];
 }
 
@@ -195,7 +198,7 @@ export interface CalendarData {
 /** Datos para el calendario tipo GitHub del último año. */
 export function calendarData(coffees: Coffee[], now: Date, weekCount = 52): CalendarData {
   const counts = new Map<string, number>();
-  for (const [key, group] of groupByDay(coffees)) counts.set(key, round1(sumCoffeeValue(group)));
+  for (const [key, group] of groupByDay(coffees)) counts.set(key, round1(sumCaffeineMg(group)));
 
   const todayKey = toDateKey(now);
   const firstWeekStart = addDays(startOfWeek(now), -7 * (weekCount - 1));
@@ -227,11 +230,14 @@ export function calendarData(coffees: Coffee[], now: Date, weekCount = 52): Cale
   return { weeks, monthLabels };
 }
 
-/** Color del calendario según el valor en cafés (verde, naranja, rojo); admite fracciones. */
-export function calendarColor(count: number): string {
-  if (count <= 0) return 'var(--color-coffee-100)';
-  if (count < 2) return '#86efac';
-  if (count < 3) return '#22c55e';
-  if (count < 4) return '#f97316';
+/**
+ * Color del calendario según los mg de cafeína del día, en múltiplos de un
+ * espresso: hasta ~2 espressos en verde, ~3 en naranja, 4 o más en rojo.
+ */
+export function calendarColor(mg: number): string {
+  if (mg <= 0) return 'var(--color-coffee-100)';
+  if (mg < ESPRESSO_MG * 2) return '#86efac';
+  if (mg < ESPRESSO_MG * 3) return '#22c55e';
+  if (mg < ESPRESSO_MG * 4) return '#f97316';
   return '#ef4444';
 }

@@ -41,7 +41,14 @@ import {
   weeklySeries,
 } from '@/utils/chartData';
 import { formatDuration, formatWeekdayName } from '@/utils/dates';
-import { coffeeLabel, formatInteger, formatNumber } from '@/utils/format';
+import {
+  drinkLabel,
+  formatEspressos,
+  formatInteger,
+  formatMg,
+  formatNumber,
+} from '@/utils/format';
+import { espressoEquivalent } from '@/types/coffee';
 
 export default function StatsPage() {
   const { profile } = useAuth();
@@ -79,32 +86,33 @@ export default function StatsPage() {
   }));
 
   const todayItems: StatListItem[] = [
-    { label: 'Cafés', value: formatNumber(today.count) },
+    { label: 'Cafeína', value: formatMg(today.mg) },
+    { label: 'Equivalencia', value: formatEspressos(espressoEquivalent(today.mg)) },
     {
-      label: 'Cafés por hora',
-      value: today.coffeesPerHour !== null ? formatNumber(today.coffeesPerHour) : '—',
+      label: 'Cafeína por hora',
+      value: today.mgPerHour !== null ? `${formatInteger(today.mgPerHour)} mg/h` : '—',
     },
     {
-      label: 'Media entre cafés',
+      label: 'Media entre bebidas',
       value: today.avgIntervalMinutes !== null ? formatDuration(today.avgIntervalMinutes) : '—',
     },
   ];
 
   const weekItems: StatListItem[] = [
-    { label: 'Total', value: formatNumber(week.total) },
-    { label: 'Media diaria', value: formatNumber(week.dailyAvg) },
+    { label: 'Total', value: formatMg(week.total) },
+    { label: 'Media diaria', value: formatMg(week.dailyAvg) },
     {
-      label: 'Día con más cafés',
+      label: 'Día con más cafeína',
       icon: <Zap className="size-3.5 text-amber-500" aria-hidden />,
       value: week.maxDay
-        ? `${formatWeekdayName(week.maxDay.dateKey)} (${formatNumber(week.maxDay.count)})`
+        ? `${formatWeekdayName(week.maxDay.dateKey)} (${formatMg(week.maxDay.count)})`
         : '—',
     },
     {
-      label: 'Día con menos cafés',
+      label: 'Día con menos cafeína',
       icon: <Trophy className="size-3.5 text-emerald-500" aria-hidden />,
       value: week.minDay
-        ? `${formatWeekdayName(week.minDay.dateKey)} (${formatNumber(week.minDay.count)})`
+        ? `${formatWeekdayName(week.minDay.dateKey)} (${formatMg(week.minDay.count)})`
         : '—',
     },
   ];
@@ -112,24 +120,25 @@ export default function StatsPage() {
   // Comparación: más cafés que el mes anterior en rojo, menos en verde.
   const monthDelta = month.total - month.previousTotal;
   const monthItems: StatListItem[] = [
-    { label: 'Total', value: formatNumber(month.total) },
-    { label: 'Media diaria', value: formatNumber(month.dailyAvg) },
-    { label: 'Media semanal', value: formatNumber(month.weeklyAvg) },
+    { label: 'Total', value: formatMg(month.total) },
+    { label: 'Media diaria', value: formatMg(month.dailyAvg) },
+    { label: 'Media semanal', value: formatMg(month.weeklyAvg) },
     {
       label: 'Respecto al mes anterior',
       value:
         monthDelta === 0
-          ? `Igual (${formatNumber(month.previousTotal)})`
-          : `${monthDelta > 0 ? '+' : ''}${formatNumber(monthDelta)} (antes ${formatNumber(month.previousTotal)})`,
+          ? `Igual (${formatMg(month.previousTotal)})`
+          : `${monthDelta > 0 ? '+' : ''}${formatMg(monthDelta)} (antes ${formatMg(month.previousTotal)})`,
       tone: monthDelta > 0 ? 'negative' : monthDelta < 0 ? 'positive' : 'default',
     },
   ];
 
   const historicItems: StatListItem[] = [
-    { label: 'Total de cafés', value: formatNumber(historic.total) },
-    { label: 'Promedio diario', value: formatNumber(historic.dailyAvg) },
-    { label: 'Promedio semanal', value: formatNumber(historic.weeklyAvg) },
-    { label: 'Promedio mensual', value: formatNumber(historic.monthlyAvg) },
+    { label: 'Cafeína total', value: formatMg(historic.total) },
+    { label: 'Equivalencia', value: formatEspressos(espressoEquivalent(historic.total)) },
+    { label: 'Promedio diario', value: formatMg(historic.dailyAvg) },
+    { label: 'Promedio semanal', value: formatMg(historic.weeklyAvg) },
+    { label: 'Promedio mensual', value: formatMg(historic.monthlyAvg) },
     {
       label: 'Horas trabajadas',
       value:
@@ -138,7 +147,7 @@ export default function StatsPage() {
           : '—',
     },
     {
-      label: 'Tiempo total entre cafés',
+      label: 'Tiempo total entre bebidas',
       value: historic.totalIntervalMinutes > 0 ? formatDuration(historic.totalIntervalMinutes) : '—',
     },
   ];
@@ -199,7 +208,7 @@ export default function StatsPage() {
           },
           {
             key: 'hourly',
-            title: 'Cafés por hora del día',
+            title: 'Cafeína por hora del día',
             subtitle: 'Todo el histórico',
             icon: <Clock className="size-4" aria-hidden />,
             content: <SeriesChart data={hourly} tickInterval={2} />,
@@ -220,27 +229,27 @@ export default function StatsPage() {
           {
             key: 'monthlyAvg',
             title: 'Promedio mensual',
-            subtitle: 'Cafés por día registrado en cada mes',
+            subtitle: 'Media de mg de cafeína por día registrado en cada mes',
             icon: <LineChart className="size-4" aria-hidden />,
             content: (
-              <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria" />
+              <SeriesChart data={monthlyAvg} type="line" color={chartColors.green} name="Media diaria (mg)" />
             ),
             expanded: (
-              <SeriesChart data={monthlyAvgFull} type="line" color={chartColors.green} name="Media diaria" height={320} />
+              <SeriesChart data={monthlyAvgFull} type="line" color={chartColors.green} name="Media diaria (mg)" height={320} />
             ),
             expandedMinWidth: Math.max(700, monthlyAvgFull.length * 50),
           },
           {
             key: 'caffeine',
             title: 'Cafeína',
-            subtitle: 'Cafés con cafeína frente a descafeinados',
+            subtitle: 'Bebidas con cafeína frente a sin cafeína',
             icon: <Flame className="size-4" aria-hidden />,
             content: (
               <div className="flex flex-col gap-3">
                 <RingChart
                   data={caffeineRing}
-                  centerValue={formatNumber(caffeineTotal)}
-                  centerLabel={coffeeLabel(caffeineTotal)}
+                  centerValue={formatInteger(caffeineTotal)}
+                  centerLabel={drinkLabel(caffeineTotal)}
                 />
                 <div className="grid grid-cols-2 gap-2">
                   {caffeineRing.map((segment) => {
@@ -304,12 +313,12 @@ export default function StatsPage() {
       <Card>
         <CardHeader
           title="Calendario de consumo"
-          subtitle="Último año: 1-2 cafés en verde, 3 en naranja, 4 o más en rojo"
+          subtitle="Último año: hasta ~2 espressos en verde, ~3 en naranja, 4 o más en rojo"
           icon={<CalendarDays className="size-4" aria-hidden />}
         />
         <CalendarHeatmap coffees={coffees} now={now} />
         <p className="mt-1 text-xs text-coffee-400">
-          {formatNumber(historic.total)} {coffeeLabel(historic.total)} registrados en total
+          {formatInteger(historic.totalDrinks)} {drinkLabel(historic.totalDrinks)} registradas en total
         </p>
       </Card>
 

@@ -31,7 +31,7 @@ export function SeriesChart({
   type = 'bar',
   color = chartColors.coffee,
   height = 240,
-  name = 'Cafés',
+  name = 'Cafeína (mg)',
   tickInterval = 'preserveStartEnd',
 }: SeriesChartProps) {
   const commonAxes = (

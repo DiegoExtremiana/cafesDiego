@@ -70,7 +70,7 @@ export default function HistoryPage() {
         <h1 className="text-xl font-bold text-coffee-900">Historial</h1>
         <Button onClick={openAdd}>
           <Plus className="size-4" aria-hidden />
-          Añadir café
+          Añadir bebida
         </Button>
       </div>
 
@@ -145,7 +145,7 @@ export default function HistoryPage() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title="Eliminar café"
+        title="Eliminar bebida"
         message={
           deleting
             ? `¿Seguro que quieres eliminar el café de las ${formatTime(deleting.takenAt)} del ${toDateKey(deleting.takenAt)}?`

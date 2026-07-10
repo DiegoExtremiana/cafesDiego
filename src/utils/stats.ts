@@ -2,7 +2,7 @@
  * Motor de estadísticas: funciones puras sobre la lista de cafés
  * (siempre ordenada de forma ascendente por takenAt).
  */
-import { coffeeValue, sumCoffeeValue, type Coffee } from '@/types/coffee';
+import { caffeineMg, sumCaffeineMg, type Coffee } from '@/types/coffee';
 import type { Profile } from '@/types/profile';
 import type {
   DashboardStats,
@@ -42,11 +42,11 @@ export function groupByDay(coffees: Coffee[]): Map<string, Coffee[]> {
   return groups;
 }
 
-/** Recuento por día como lista ordenada (en valor de cafés: la energética vale 1,5 y la cerveza 0). */
+/** Cafeína por día como lista ordenada, en mg. */
 export function countByDay(coffees: Coffee[]): DayCount[] {
   return [...groupByDay(coffees)].map(([dateKey, group]) => ({
     dateKey,
-    count: sumCoffeeValue(group),
+    count: sumCaffeineMg(group),
   }));
 }
 
@@ -100,11 +100,11 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
   const todayAvgInterval = average(todayIntervals);
   const historicAvgInterval = average(intraDayIntervals(coffees));
 
-  // Ritmo: cafés por hora desde el primer café del día (mínimo una hora de ventana).
-  let coffeesPerHourToday: number | null = null;
+  // Ritmo: mg de cafeína por hora desde la primera bebida del día (mínimo una hora de ventana).
+  let mgPerHourToday: number | null = null;
   if (firstToday) {
     const hoursElapsed = Math.max(minutesBetween(firstToday.takenAt, now) / 60, 1);
-    coffeesPerHourToday = sumCoffeeValue(today) / hoursElapsed;
+    mgPerHourToday = sumCaffeineMg(today) / hoursElapsed;
   }
 
   // Estimación del siguiente café combinando dos patrones del histórico:
@@ -150,13 +150,13 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
   }
 
   return {
-    todayCount: sumCoffeeValue(today),
-    todayCaffeineCount: sumCoffeeValue(today.filter((coffee) => coffee.hasCaffeine)),
+    todayMg: sumCaffeineMg(today),
+    todayDrinks: today.length,
     lastCoffee,
     minutesSinceLast: lastCoffee ? minutesBetween(lastCoffee.takenAt, now) : null,
     todayAvgIntervalMinutes: todayAvgInterval,
     historicAvgIntervalMinutes: historicAvgInterval,
-    coffeesPerHourToday,
+    mgPerHourToday,
     nextCoffeeEstimate,
   };
 }
@@ -164,8 +164,9 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
 export function computeTodayStats(coffees: Coffee[], now: Date): TodayStats {
   const dashboard = computeDashboardStats(coffees, now);
   return {
-    count: dashboard.todayCount,
-    coffeesPerHour: dashboard.coffeesPerHourToday,
+    mg: dashboard.todayMg,
+    drinks: dashboard.todayDrinks,
+    mgPerHour: dashboard.mgPerHourToday,
     avgIntervalMinutes: dashboard.todayAvgIntervalMinutes,
   };
 }
@@ -187,7 +188,7 @@ export function computeWeekStats(coffees: Coffee[], now: Date): WeekStats {
     if (!minDay || day.count < minDay.count) minDay = day;
   }
 
-  const weekTotal = sumCoffeeValue(weekCoffees);
+  const weekTotal = sumCaffeineMg(weekCoffees);
   return {
     total: weekTotal,
     dailyAvg: elapsedDays > 0 ? weekTotal / elapsedDays : 0,
@@ -206,8 +207,8 @@ export function computeMonthStats(coffees: Coffee[], now: Date): MonthStats {
   let previousTotal = 0;
   for (const coffee of coffees) {
     const key = toMonthKey(coffee.takenAt);
-    if (key === currentKey) total += coffeeValue(coffee);
-    else if (key === previousKey) previousTotal += coffeeValue(coffee);
+    if (key === currentKey) total += caffeineMg(coffee);
+    else if (key === previousKey) previousTotal += caffeineMg(coffee);
   }
 
   const elapsedDays = now.getDate();
@@ -250,13 +251,14 @@ export function computeHistoricStats(coffees: Coffee[], profile: Profile | null)
   }
 
   const intervals = intraDayIntervals(coffees);
-  const totalValue = sumCoffeeValue(coffees);
+  const totalMg = sumCaffeineMg(coffees);
 
   return {
-    total: totalValue,
-    dailyAvg: dayCount > 0 ? totalValue / dayCount : 0,
-    weeklyAvg: weeks.size > 0 ? totalValue / weeks.size : 0,
-    monthlyAvg: months.size > 0 ? totalValue / months.size : 0,
+    total: totalMg,
+    totalDrinks: coffees.length,
+    dailyAvg: dayCount > 0 ? totalMg / dayCount : 0,
+    weeklyAvg: weeks.size > 0 ? totalMg / weeks.size : 0,
+    monthlyAvg: months.size > 0 ? totalMg / months.size : 0,
     totalWorkedHours,
     totalIntervalMinutes: intervals.reduce((sum, value) => sum + value, 0),
     firstCoffee,

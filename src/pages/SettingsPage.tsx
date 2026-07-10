@@ -64,11 +64,11 @@ function validateFields(fields: FieldSnapshot):
   }
   const parsedMax = fields.maxCoffees.trim() === '' ? null : Number(fields.maxCoffees);
   if (parsedMax !== null && (!Number.isInteger(parsedMax) || parsedMax < 1)) {
-    return { error: 'El máximo de cafés debe ser un número entero mayor que cero.' };
+    return { error: 'El máximo de bebidas debe ser un número entero mayor que cero.' };
   }
   const parsedMaxCaffeine = fields.maxCaffeine.trim() === '' ? null : Number(fields.maxCaffeine);
   if (parsedMaxCaffeine !== null && (!Number.isInteger(parsedMaxCaffeine) || parsedMaxCaffeine < 1)) {
-    return { error: 'El máximo de cafés con cafeína debe ser un número entero mayor que cero.' };
+    return { error: 'El máximo de cafeína debe ser un número entero de mg mayor que cero.' };
   }
   return { normalizedUsername, parsedMax, parsedMaxCaffeine };
 }
@@ -335,7 +335,7 @@ export default function SettingsPage() {
             </div>
             <WorkDaysSelector value={workDays} onChange={setWorkDays} />
             <Input
-              label="Máximo recomendado de cafés al día"
+              label="Máximo recomendado de bebidas al día"
               type="number"
               min={1}
               max={20}
@@ -345,14 +345,14 @@ export default function SettingsPage() {
               hint="Déjalo vacío si no quieres un límite."
             />
             <Input
-              label="Máximo recomendado de cafés con cafeína al día"
+              label="Máximo recomendado de cafeína al día (mg)"
               type="number"
               min={1}
-              max={20}
+              max={2000}
               value={maxCaffeine}
               onChange={(event) => setMaxCaffeine(event.target.value)}
-              placeholder="Sin límite"
-              hint="Solo cuenta los cafés marcados como 'con cafeína'. Déjalo vacío si no quieres un límite."
+              placeholder="Sin límite (p. ej. 400)"
+              hint="Se suelen recomendar hasta 400 mg diarios. Déjalo vacío si no quieres un límite."
             />
           </div>
         </Card>

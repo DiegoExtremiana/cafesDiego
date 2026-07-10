@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { CoffeeTypeIcon } from './CoffeeTypeIcon';
 import {
+  COFFEE_TYPE_CAFFEINE_MG,
   COFFEE_TYPE_LABELS,
-  COFFEE_TYPE_VALUES,
   coffeeTypesFor,
   type CoffeeDetails,
   type CoffeeType,
 } from '@/types/coffee';
-import { coffeeLabel, formatNumber } from '@/utils/format';
 
 interface CoffeeDetailsModalProps {
   open: boolean;
@@ -87,7 +86,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
     <Modal open={open} title="¿Qué has tomado?" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div>
-          <p className="mb-2 text-sm font-medium text-coffee-700">Tipo de café</p>
+          <p className="mb-2 text-sm font-medium text-coffee-700">Tipo de bebida</p>
           <div className="flex flex-col">
             {TYPE_GROUPS.map((group, groupIndex) => {
               const groupTypes = group.filter((value) => availableTypes.includes(value));
@@ -114,12 +113,9 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
                       >
                         <CoffeeTypeIcon type={value} className="size-5" />
                         {COFFEE_TYPE_LABELS[value]}
-                        {COFFEE_TYPE_VALUES[value] !== 1 && (
-                          <span className="text-[10px] leading-none text-coffee-400">
-                            vale {formatNumber(COFFEE_TYPE_VALUES[value])}{' '}
-                            {coffeeLabel(COFFEE_TYPE_VALUES[value])}
-                          </span>
-                        )}
+                        <span className="text-[10px] leading-none text-coffee-400">
+                          {COFFEE_TYPE_CAFFEINE_MG[value]} mg
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -145,7 +141,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
             Cancelar
           </Button>
           <Button type="button" loading={saving} onClick={handleSubmit}>
-            Registrar café
+            Registrar bebida
           </Button>
         </div>
       </div>

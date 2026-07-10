@@ -34,10 +34,10 @@ import { coffeesOfDay, computeHistoricStats, computeTodayStats, computeWeekStats
 import { computeCuriousStats } from '@/utils/curiousStats';
 import { computeAchievements } from '@/utils/achievements';
 import { caffeineBreakdown, dailySeries, hourlyDistribution, monthlySeries } from '@/utils/chartData';
-import { addDays, formatDate, formatDuration, formatTime, formatWeekdayName, startOfWeek } from '@/utils/dates';
-import { coffeeLabel, formatNumber } from '@/utils/format';
+import { formatDate, formatDuration, formatTime, formatWeekdayName } from '@/utils/dates';
+import { drinkLabel, formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import type { Profile } from '@/types/profile';
-import { COFFEE_TYPE_LABELS, sumCoffeeValue, type Coffee } from '@/types/coffee';
+import { COFFEE_TYPE_LABELS, espressoEquivalent, type Coffee } from '@/types/coffee';
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'error';
 type Section = 'hoy' | 'semana' | 'general';
@@ -90,20 +90,11 @@ export default function PublicProfilePage() {
 
   const today = useMemo(() => computeTodayStats(coffees, now), [coffees, now]);
   const todayCoffees = useMemo(() => coffeesOfDay(coffees, now), [coffees, now]);
-  const todayCaffeineCount = useMemo(
-    () => sumCoffeeValue(todayCoffees.filter((coffee) => coffee.hasCaffeine)),
+  const todayCaffeineDrinks = useMemo(
+    () => todayCoffees.filter((coffee) => coffee.hasCaffeine).length,
     [todayCoffees],
   );
   const week = useMemo(() => computeWeekStats(coffees, now), [coffees, now]);
-  const weekCaffeineCount = useMemo(() => {
-    const start = startOfWeek(now);
-    const end = addDays(start, 7);
-    return sumCoffeeValue(
-      coffees.filter(
-        (coffee) => coffee.takenAt >= start && coffee.takenAt < end && coffee.hasCaffeine,
-      ),
-    );
-  }, [coffees, now]);
   const weekly7 = useMemo(() => dailySeries(coffees, now, 7), [coffees, now]);
   const historic = useMemo(() => computeHistoricStats(coffees, profile), [coffees, profile]);
   const historicCaffeine = useMemo(() => caffeineBreakdown(coffees), [coffees]);
@@ -236,19 +227,19 @@ export default function PublicProfilePage() {
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <StatCard
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
-                label="Cafés hoy"
-                value={formatNumber(today.count)}
-                sub={`${formatNumber(todayCaffeineCount)} con cafeína · ${formatNumber(today.count - todayCaffeineCount)} sin`}
+                label="Cafeína hoy"
+                value={formatMg(today.mg)}
+                sub={formatEspressos(espressoEquivalent(today.mg))}
               />
               <StatCard
                 icon={<Zap className="size-5" aria-hidden />}
                 label="Ritmo"
-                value={today.coffeesPerHour !== null ? `${formatNumber(today.coffeesPerHour)} /h` : '—'}
-                sub="Cafés por hora"
+                value={today.mgPerHour !== null ? `${formatInteger(today.mgPerHour)} mg/h` : '—'}
+                sub="Cafeína por hora"
               />
               <StatCard
                 icon={<Clock className="size-5" aria-hidden />}
-                label="Media entre cafés"
+                label="Media entre bebidas"
                 value={today.avgIntervalMinutes !== null ? formatDuration(today.avgIntervalMinutes) : '—'}
               />
             </div>
@@ -257,7 +248,7 @@ export default function PublicProfilePage() {
                 <Card>
                   <CardHeader
                     title="Cafés de hoy"
-                    subtitle={`${formatNumber(todayCaffeineCount)} con cafeína · ${formatNumber(today.count - todayCaffeineCount)} sin cafeína`}
+                    subtitle={`${todayCaffeineDrinks} con cafeína · ${todayCoffees.length - todayCaffeineDrinks} sin cafeína`}
                     icon={<History className="size-4" aria-hidden />}
                   />
                   <ul className="divide-y divide-coffee-100">
@@ -307,20 +298,20 @@ export default function PublicProfilePage() {
               <StatCard
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
                 label="Total semana"
-                value={formatNumber(week.total)}
-                sub={`${formatNumber(weekCaffeineCount)} con cafeína · ${formatNumber(week.total - weekCaffeineCount)} sin`}
+                value={formatMg(week.total)}
+                sub={formatEspressos(espressoEquivalent(week.total))}
               />
               <StatCard
                 icon={<BarChart3 className="size-5" aria-hidden />}
                 label="Media diaria"
-                value={formatNumber(week.dailyAvg)}
+                value={formatMg(week.dailyAvg)}
               />
               <StatCard
                 icon={<Zap className="size-5" aria-hidden />}
                 label="Día con más"
                 value={
                   week.maxDay
-                    ? `${formatWeekdayName(week.maxDay.dateKey)} (${formatNumber(week.maxDay.count)})`
+                    ? `${formatWeekdayName(week.maxDay.dateKey)} (${formatMg(week.maxDay.count)})`
                     : '—'
                 }
               />
@@ -329,7 +320,7 @@ export default function PublicProfilePage() {
                 label="Día con menos"
                 value={
                   week.minDay
-                    ? `${formatWeekdayName(week.minDay.dateKey)} (${formatNumber(week.minDay.count)})`
+                    ? `${formatWeekdayName(week.minDay.dateKey)} (${formatMg(week.minDay.count)})`
                     : '—'
                 }
               />
@@ -352,8 +343,8 @@ export default function PublicProfilePage() {
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               <StatCard
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
-                label="Total de cafés"
-                value={formatNumber(historic.total)}
+                label="Cafeína total"
+                value={formatMg(historic.total)}
                 sub={
                   historic.firstCoffee
                     ? `Desde el ${formatDate(historic.firstCoffee.takenAt)}`
@@ -363,13 +354,13 @@ export default function PublicProfilePage() {
               <StatCard
                 icon={<BarChart3 className="size-5" aria-hidden />}
                 label="Promedio diario"
-                value={formatNumber(historic.dailyAvg)}
-                sub="Cafés por día registrado"
+                value={formatMg(historic.dailyAvg)}
+                sub="mg por día registrado"
               />
               <StatCard
                 icon={<CalendarDays className="size-5" aria-hidden />}
                 label="Promedio semanal"
-                value={formatNumber(historic.weeklyAvg)}
+                value={formatMg(historic.weeklyAvg)}
               />
               <StatCard
                 icon={<Clock className="size-5" aria-hidden />}
@@ -383,9 +374,9 @@ export default function PublicProfilePage() {
               />
               <StatCard
                 icon={<Zap className="size-5" aria-hidden />}
-                label="Con cafeína"
-                value={formatNumber(historicCaffeineCount)}
-                sub={`${formatNumber(historicDecafCount)} sin cafeína`}
+                label="Bebidas con cafeína"
+                value={formatInteger(historicCaffeineCount)}
+                sub={`${formatInteger(historicDecafCount)} sin cafeína`}
               />
             </div>
 
@@ -497,7 +488,7 @@ export default function PublicProfilePage() {
         )}
 
         <footer className="border-t border-coffee-100 py-6 text-center text-xs text-coffee-400">
-          {formatNumber(historic.total)} {coffeeLabel(historic.total)} registrados con Contador de cafés
+          {formatInteger(historic.totalDrinks)} {drinkLabel(historic.totalDrinks)} registradas con Contador de cafés
         </footer>
       </main>
     </div>

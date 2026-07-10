@@ -38,8 +38,8 @@ export function CoffeeList({ coffees, onEdit, onDelete, onUpdateDetails }: Coffe
     return (
       <EmptyState
         icon={<CoffeeIcon className="size-10" aria-hidden />}
-        title="Sin cafés este día"
-        description="No hay ningún café registrado en esta fecha."
+        title="Sin bebidas este día"
+        description="No hay ninguna bebida registrada en esta fecha."
       />
     );
   }
@@ -62,7 +62,7 @@ export function CoffeeList({ coffees, onEdit, onDelete, onUpdateDetails }: Coffe
                   <p className="text-xs text-coffee-400">
                     {previous
                       ? `${formatDuration(minutesBetween(previous.takenAt, coffee.takenAt))} desde el anterior`
-                      : 'Primer café del día'}
+                      : 'Primera bebida del día'}
                   </p>
                 </div>
               </div>

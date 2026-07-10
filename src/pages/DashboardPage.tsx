@@ -23,8 +23,8 @@ import { useCoffees } from '@/hooks/useCoffees';
 import { useNow } from '@/hooks/useNow';
 import { computeDashboardStats, coffeesOfDay } from '@/utils/stats';
 import { formatDuration, formatTime, formatDateLong } from '@/utils/dates';
-import { coffeeLabel, formatNumber } from '@/utils/format';
-import type { Coffee, CoffeeDetails } from '@/types/coffee';
+import { drinkLabel, formatEspressos, formatInteger, formatMg } from '@/utils/format';
+import { espressoEquivalent, type Coffee, type CoffeeDetails } from '@/types/coffee';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -60,14 +60,23 @@ export default function DashboardPage() {
       </div>
 
       <Card>
-        <CardHeader title="Consumo de hoy" icon={<Gauge className="size-4" aria-hidden />} />
+        <CardHeader title="Bebidas de hoy" icon={<Gauge className="size-4" aria-hidden />} />
         <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-lg font-bold text-coffee-900">
+              Has consumido {formatMg(stats.todayMg)} de cafeína
+            </p>
+            <p className="text-sm text-coffee-400">
+              Equivale aproximadamente a{' '}
+              {formatEspressos(espressoEquivalent(stats.todayMg)).replace('≈ ', '')}.
+            </p>
+          </div>
           <div>
             {profile?.maxDailyCaffeine != null ? (
               <ProgressBar
-                value={stats.todayCaffeineCount}
+                value={stats.todayMg}
                 max={profile.maxDailyCaffeine}
-                label="Cafeína"
+                label="Cafeína (mg)"
               />
             ) : (
               <div className="flex items-center justify-between text-sm">
@@ -76,34 +85,37 @@ export default function DashboardPage() {
                   Cafeína
                 </span>
                 <span className="font-semibold tabular-nums text-coffee-900">
-                  {formatNumber(stats.todayCaffeineCount)}
+                  {formatMg(stats.todayMg)}
                 </span>
               </div>
             )}
-            {profile?.maxDailyCaffeine != null &&
-              stats.todayCaffeineCount >= profile.maxDailyCaffeine && (
-                <p className="mt-1.5 text-xs text-red-600">
-                  Has alcanzado tu máximo de cafeína de hoy.
-                </p>
-              )}
+            {profile?.maxDailyCaffeine != null && stats.todayMg >= profile.maxDailyCaffeine && (
+              <p className="mt-1.5 text-xs text-red-600">
+                Has alcanzado tu máximo de cafeína de hoy.
+              </p>
+            )}
           </div>
           <div>
             {profile?.maxDailyCoffees != null ? (
-              <ProgressBar value={stats.todayCount} max={profile.maxDailyCoffees} label="Cafés" />
+              <ProgressBar
+                value={stats.todayDrinks}
+                max={profile.maxDailyCoffees}
+                label="Bebidas"
+              />
             ) : (
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-coffee-600">
                   <CoffeeIcon className="size-4 text-coffee-500" aria-hidden />
-                  Cafés
+                  Bebidas
                 </span>
                 <span className="font-semibold tabular-nums text-coffee-900">
-                  {formatNumber(stats.todayCount)}
+                  {formatInteger(stats.todayDrinks)}
                 </span>
               </div>
             )}
-            {profile?.maxDailyCoffees != null && stats.todayCount >= profile.maxDailyCoffees && (
+            {profile?.maxDailyCoffees != null && stats.todayDrinks >= profile.maxDailyCoffees && (
               <p className="mt-1.5 text-xs text-red-600">
-                Has alcanzado tu máximo recomendado de hoy. Quizá toque descafeinado.
+                Has alcanzado tu máximo recomendado de bebidas de hoy. Quizá toque descafeinado.
               </p>
             )}
           </div>
@@ -113,32 +125,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           icon={<CoffeeIcon className="size-5" aria-hidden />}
-          label="Cafés hoy"
-          value={formatNumber(stats.todayCount)}
+          label="Cafeína hoy"
+          value={formatMg(stats.todayMg)}
           sub={
-            stats.todayCount === 0
-              ? 'Todavía ninguno'
-              : `Último a las ${formatTime(todayCoffees.at(-1)?.takenAt ?? now)}`
+            stats.todayDrinks === 0
+              ? 'Todavía nada'
+              : formatEspressos(espressoEquivalent(stats.todayMg))
           }
         />
         <StatCard
           icon={<Timer className="size-5" aria-hidden />}
-          label="Desde el último café"
+          label="Desde la última bebida"
           value={stats.minutesSinceLast !== null ? formatDuration(stats.minutesSinceLast) : '—'}
         />
         <StatCard
           icon={<Gauge className="size-5" aria-hidden />}
           label="Ritmo de consumo"
           value={
-            stats.coffeesPerHourToday !== null
-              ? `${formatNumber(stats.coffeesPerHourToday)} /h`
-              : '—'
+            stats.mgPerHourToday !== null ? `${formatInteger(stats.mgPerHourToday)} mg/h` : '—'
           }
-          sub="Cafés por hora hoy"
+          sub="Cafeína por hora hoy"
         />
         <StatCard
           icon={<Hourglass className="size-5" aria-hidden />}
-          label="Media entre cafés"
+          label="Media entre bebidas"
           value={
             stats.todayAvgIntervalMinutes !== null
               ? formatDuration(stats.todayAvgIntervalMinutes)
@@ -150,7 +160,7 @@ export default function DashboardPage() {
         />
         <StatCard
           icon={<AlarmClock className="size-5" aria-hidden />}
-          label="Siguiente café"
+          label="Siguiente bebida"
           value={
             stats.nextCoffeeEstimate
               ? nextIsPast
@@ -165,8 +175,8 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader
-          title="Cafés de hoy"
-          subtitle={`${todayCoffees.length} ${coffeeLabel(todayCoffees.length)}`}
+          title="Registro de hoy"
+          subtitle={`${todayCoffees.length} ${drinkLabel(todayCoffees.length)}`}
           icon={<History className="size-4" aria-hidden />}
           actions={
             <Link
@@ -198,10 +208,10 @@ export default function DashboardPage() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title="Eliminar café"
+        title="Eliminar bebida"
         message={
           deleting
-            ? `¿Seguro que quieres eliminar el café de las ${formatTime(deleting.takenAt)}?`
+            ? `¿Seguro que quieres eliminar la bebida de las ${formatTime(deleting.takenAt)}?`
             : ''
         }
         onConfirm={async () => {

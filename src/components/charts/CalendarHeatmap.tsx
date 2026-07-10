@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { calendarData, calendarColor } from '@/utils/chartData';
 import { formatDate, dateKeyToDate } from '@/utils/dates';
-import { coffeeLabel, formatNumber } from '@/utils/format';
-import type { Coffee } from '@/types/coffee';
+import { formatMg } from '@/utils/format';
+import { ESPRESSO_MG, type Coffee } from '@/types/coffee';
 
 const WEEKDAY_LABELS = ['L', '', 'X', '', 'V', '', 'D'];
 
@@ -56,7 +56,7 @@ export function CalendarHeatmap({ coffees, now }: CalendarHeatmapProps) {
                   disabled={!cell.inRange}
                   aria-label={
                     cell.inRange
-                      ? `${formatDate(dateKeyToDate(cell.dateKey))}: ${formatNumber(cell.count)} ${coffeeLabel(cell.count)}`
+                      ? `${formatDate(dateKeyToDate(cell.dateKey))}: ${formatMg(cell.count)} de cafeína`
                       : undefined
                   }
                   onMouseEnter={() => cell.inRange && setActive({ dateKey: cell.dateKey, count: cell.count })}
@@ -74,18 +74,18 @@ export function CalendarHeatmap({ coffees, now }: CalendarHeatmapProps) {
         </div>
         <div className="mt-3 flex items-center gap-2 pl-6 text-[10px] text-coffee-400">
           <span>Menos</span>
-          {[0, 1, 2, 3, 4].map((count) => (
+          {[0, 1, 2, 3, 4].map((espressos) => (
             <span
-              key={count}
+              key={espressos}
               className="size-[11px] rounded-[3px]"
-              style={{ backgroundColor: calendarColor(count) }}
+              style={{ backgroundColor: calendarColor(espressos * ESPRESSO_MG) }}
             />
           ))}
           <span>Más</span>
         </div>
         <p className="mt-2 min-h-[1.1rem] pl-6 text-xs font-medium text-coffee-600">
           {active
-            ? `${formatDate(dateKeyToDate(active.dateKey))}: ${formatNumber(active.count)} ${coffeeLabel(active.count)}`
+            ? `${formatDate(dateKeyToDate(active.dateKey))}: ${formatMg(active.count)} de cafeína`
             : 'Pasa el cursor o toca un día para ver el detalle.'}
         </p>
       </div>

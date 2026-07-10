@@ -1,5 +1,5 @@
 /** Exportación de datos a CSV y JSON (descarga en el navegador). */
-import type { Coffee } from '@/types/coffee';
+import { caffeineMg, type Coffee } from '@/types/coffee';
 import { formatTime, toDateKey } from './dates';
 
 function download(content: string, filename: string, mimeType: string): void {
@@ -18,10 +18,10 @@ function timestamp(): string {
 
 /** CSV con separador ';' y BOM para abrirse bien en Excel en español. */
 export function exportToCsv(coffees: Coffee[]): void {
-  const header = 'fecha;hora;timestamp_iso';
+  const header = 'fecha;hora;tipo;con_cafeina;cafeina_mg;timestamp_iso';
   const rows = coffees.map(
     (coffee) =>
-      `${toDateKey(coffee.takenAt)};${formatTime(coffee.takenAt)};${coffee.takenAt.toISOString()}`,
+      `${toDateKey(coffee.takenAt)};${formatTime(coffee.takenAt)};${coffee.type};${coffee.hasCaffeine ? 'si' : 'no'};${caffeineMg(coffee)};${coffee.takenAt.toISOString()}`,
   );
   const content = `﻿${[header, ...rows].join('\r\n')}`;
   download(content, `cafes-${timestamp()}.csv`, 'text/csv;charset=utf-8');
@@ -31,6 +31,9 @@ export function exportToJson(coffees: Coffee[]): void {
   const data = coffees.map((coffee) => ({
     fecha: toDateKey(coffee.takenAt),
     hora: formatTime(coffee.takenAt),
+    tipo: coffee.type,
+    conCafeina: coffee.hasCaffeine,
+    cafeinaMg: caffeineMg(coffee),
     timestamp: coffee.takenAt.toISOString(),
   }));
   download(JSON.stringify(data, null, 2), `cafes-${timestamp()}.json`, 'application/json');

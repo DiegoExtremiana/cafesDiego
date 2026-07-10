@@ -34,23 +34,30 @@ export const COFFEE_TYPE_LABELS: Record<CoffeeType, string> = {
   infusion: 'Infusión',
 };
 
-/** Cuántos cafés "vale" cada tipo en contadores, estadísticas y gráficos. */
-export const COFFEE_TYPE_VALUES: Record<CoffeeType, number> = {
-  espresso: 1,
-  americano: 1,
-  cortado: 1,
-  capuchino: 1,
-  latte: 1,
-  otro: 1,
-  energetica: 1.5,
-  te_negro: 0.5,
-  te_verde: 0.3,
-  matcha: 0.8,
-  cola: 0.3,
+/**
+ * Miligramos de cafeína de cada bebida: la unidad base de toda la aplicación.
+ * Edita aquí para ajustar valores o al añadir bebidas nuevas; estadísticas,
+ * gráficos y objetivos se recalculan solos a partir de esta tabla.
+ */
+export const COFFEE_TYPE_CAFFEINE_MG: Record<CoffeeType, number> = {
+  espresso: 63,
+  americano: 63,
+  cortado: 63,
+  capuchino: 63,
+  latte: 63,
+  otro: 63,
+  energetica: 80,
+  te_negro: 47,
+  te_verde: 28,
+  matcha: 64,
+  cola: 34,
   zumo: 0,
   leche: 0,
   infusion: 0,
 };
+
+/** Cafeína de un espresso: referencia de la equivalencia visual "≈ N espressos". */
+export const ESPRESSO_MG = COFFEE_TYPE_CAFFEINE_MG.espresso;
 
 /**
  * Tipos restringidos a un estado del interruptor de cafeína: las bebidas con
@@ -76,14 +83,22 @@ export function coffeeTypesFor(hasCaffeine: boolean): CoffeeType[] {
   });
 }
 
-/** Valor en cafés de una consumición. */
-export function coffeeValue(coffee: Pick<Coffee, 'type'>): number {
-  return COFFEE_TYPE_VALUES[coffee.type] ?? 1;
+/**
+ * Cafeína aportada por una consumición, en mg. Las bebidas marcadas como
+ * descafeinadas aportan 0 aunque su tipo tenga cafeína (espresso descafeinado).
+ */
+export function caffeineMg(coffee: Pick<Coffee, 'type' | 'hasCaffeine'>): number {
+  return coffee.hasCaffeine ? (COFFEE_TYPE_CAFFEINE_MG[coffee.type] ?? ESPRESSO_MG) : 0;
 }
 
-/** Suma del valor en cafés de una lista de consumiciones. */
-export function sumCoffeeValue(coffees: Pick<Coffee, 'type'>[]): number {
-  return coffees.reduce((sum, coffee) => sum + coffeeValue(coffee), 0);
+/** Suma de cafeína en mg de una lista de consumiciones. */
+export function sumCaffeineMg(coffees: Pick<Coffee, 'type' | 'hasCaffeine'>[]): number {
+  return coffees.reduce((sum, coffee) => sum + caffeineMg(coffee), 0);
+}
+
+/** Equivalencia visual: cuántos espressos representan estos miligramos. */
+export function espressoEquivalent(mg: number): number {
+  return mg / ESPRESSO_MG;
 }
 
 /** Tipo de café y si tenía cafeína, elegidos al mantener pulsado el botón de registro. */
