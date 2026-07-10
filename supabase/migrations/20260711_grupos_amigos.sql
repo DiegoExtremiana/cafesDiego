@@ -253,15 +253,15 @@ set search_path = public
 stable
 as $$
   select
-    p.id,
+    p.id as user_id,
     p.username,
     p.display_name,
-    coalesce(sum(m.mg) filter (where m.is_today), 0),
-    coalesce(sum(m.mg) filter (where m.is_week), 0),
-    coalesce(sum(m.mg), 0),
-    count(m.id) filter (where m.is_today)::int,
-    count(m.id) filter (where m.is_week)::int,
-    count(m.id)::int
+    coalesce(sum(m.mg) filter (where m.is_today), 0) as today_mg,
+    coalesce(sum(m.mg) filter (where m.is_week), 0) as week_mg,
+    coalesce(sum(m.mg), 0) as total_mg,
+    count(m.id) filter (where m.is_today)::int as today_drinks,
+    count(m.id) filter (where m.is_week)::int as week_drinks,
+    count(m.id)::int as total_drinks
   from public.group_members gm
   join public.profiles p on p.id = gm.user_id
   left join lateral (
