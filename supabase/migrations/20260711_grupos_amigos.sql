@@ -263,6 +263,7 @@ as $$
     count(m.id) filter (where m.is_week)::int as week_drinks,
     count(m.id)::int as total_drinks
   from public.group_members gm
+  join public.groups g on g.id = gm.group_id
   join public.profiles p on p.id = gm.user_id
   left join lateral (
     select
@@ -273,6 +274,8 @@ as $$
         = date_trunc('week', now() at time zone tz) as is_week
     from public.coffees c
     where c.user_id = gm.user_id
+      -- Solo cuenta desde la semana (lunes) en que se creó el grupo.
+      and c.taken_at >= (date_trunc('week', g.created_at at time zone tz) at time zone tz)
   ) m on true
   where gm.group_id = gid
     and public.is_group_member(gid, auth.uid())
@@ -297,9 +300,17 @@ as $$
     join public.profiles p on p.id = gm.user_id
     where gm.group_id = gid and public.is_group_member(gid, auth.uid())
   ),
+  grp as (
+    select date_trunc('week', created_at at time zone tz)::date as start_week
+    from public.groups where id = gid
+  ),
   weeks_list as (
+    -- Desde la semana de creación del grupo, sin bajar del inicio de la ventana.
     select generate_series(
-      date_trunc('week', now() at time zone tz)::date - ((greatest(weeks, 1) - 1) * 7),
+      greatest(
+        date_trunc('week', now() at time zone tz)::date - ((greatest(weeks, 1) - 1) * 7),
+        (select start_week from grp)
+      ),
       date_trunc('week', now() at time zone tz)::date,
       interval '7 days'
     )::date as week_start
