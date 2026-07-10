@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 : formatTime(stats.nextCoffeeEstimate)
               : '—'
           }
-          sub="Según tu histórico"
+          sub="Según tus patrones"
           tone={nextIsPast ? 'positive' : 'default'}
         />
       </div>

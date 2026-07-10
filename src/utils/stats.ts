@@ -73,10 +73,14 @@ export function coffeesOfDay(coffees: Coffee[], date: Date): Coffee[] {
   return coffees.filter((coffee) => toDateKey(coffee.takenAt) === key);
 }
 
-/** Minutos desde medianoche del primer café de cada día (para estimar la hora del primero). */
-function firstCoffeeMinutesByDay(coffees: Coffee[]): number[] {
+/**
+ * Minutos desde medianoche del café número `position` (empezando en 1) en cada
+ * día del histórico que llegó a esa posición. Captura el patrón de a qué hora
+ * sueles tomar el primer, segundo, tercer... café del día.
+ */
+function nthCoffeeMinutesByDay(coffees: Coffee[], position: number): number[] {
   return [...groupByDay(coffees).values()]
-    .map((group) => group[0])
+    .map((group) => group[position - 1])
     .filter((coffee): coffee is Coffee => coffee !== undefined)
     .map((coffee) => coffee.takenAt.getHours() * 60 + coffee.takenAt.getMinutes());
 }
@@ -103,21 +107,46 @@ export function computeDashboardStats(coffees: Coffee[], now: Date): DashboardSt
     coffeesPerHourToday = today.length / hoursElapsed;
   }
 
-  // Estimación del siguiente café.
+  // Estimación del siguiente café combinando dos patrones del histórico:
+  // 1) A qué hora sueles tomar el café que ocupa la siguiente posición del día
+  //    (si hoy llevas 2, la media de la hora de tu 3er café en días con 3 o más).
+  // 2) Tu ritmo real de hoy: último café + intervalo medio entre cafés.
+  // El peso del patrón por posición crece con los días que lo respaldan; si no
+  // hay ningún día que llegara a esa posición, se usa solo el ritmo.
   let nextCoffeeEstimate: Date | null = null;
+  const nextPosition = today.length + 1;
+  const positionMinutes = nthCoffeeMinutesByDay(coffees, nextPosition);
+  const avgPositionMinutes = average(positionMinutes);
+
+  let intervalMinutes: number | null = null;
   if (lastToday) {
     const referenceInterval = historicAvgInterval ?? todayAvgInterval;
     if (referenceInterval !== null) {
-      nextCoffeeEstimate = new Date(lastToday.takenAt.getTime() + referenceInterval * 60_000);
+      intervalMinutes =
+        lastToday.takenAt.getHours() * 60 + lastToday.takenAt.getMinutes() + referenceInterval;
     }
+  }
+
+  let estimateMinutes: number | null;
+  if (avgPositionMinutes !== null && intervalMinutes !== null) {
+    const patternWeight = Math.min(positionMinutes.length / 5, 1) * 0.6;
+    estimateMinutes = avgPositionMinutes * patternWeight + intervalMinutes * (1 - patternWeight);
   } else {
-    const firstTimes = firstCoffeeMinutesByDay(coffees);
-    const avgFirstMinutes = average(firstTimes);
-    if (avgFirstMinutes !== null) {
-      const estimate = new Date(now);
-      estimate.setHours(0, Math.round(avgFirstMinutes), 0, 0);
-      nextCoffeeEstimate = estimate;
+    estimateMinutes = avgPositionMinutes ?? intervalMinutes;
+  }
+
+  if (estimateMinutes !== null) {
+    // Si hoy vas adelantado a tu patrón, la media por posición puede quedar
+    // antes del último café: en ese caso manda el ritmo de hoy.
+    if (lastToday) {
+      const lastMinutes = lastToday.takenAt.getHours() * 60 + lastToday.takenAt.getMinutes();
+      if (estimateMinutes <= lastMinutes && intervalMinutes !== null) {
+        estimateMinutes = intervalMinutes;
+      }
     }
+    const estimate = new Date(now);
+    estimate.setHours(0, Math.round(estimateMinutes), 0, 0);
+    nextCoffeeEstimate = estimate;
   }
 
   return {
