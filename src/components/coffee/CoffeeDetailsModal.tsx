@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { CoffeeTypeIcon } from './CoffeeTypeIcon';
 import {
-  COFFEE_TYPE_CAFFEINE_MG,
+  caffeineMg,
   COFFEE_TYPE_LABELS,
   coffeeTypesFor,
   type CoffeeDetails,
@@ -144,7 +144,7 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
                             <CoffeeTypeIcon type={value} className="size-5" />
                             {COFFEE_TYPE_LABELS[value]}
                             <span className="text-[10px] leading-none text-coffee-400">
-                              {COFFEE_TYPE_CAFFEINE_MG[value]} mg
+                              {caffeineMg({ type: value, hasCaffeine })} mg
                             </span>
                           </button>
                         ))}

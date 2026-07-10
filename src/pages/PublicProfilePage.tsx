@@ -105,7 +105,7 @@ export default function PublicProfilePage() {
   const daily = useMemo(() => dailySeries(coffees, now), [coffees, now]);
   const monthly = useMemo(() => monthlySeries(coffees, now), [coffees, now]);
   const hourly = useMemo(() => hourlyDistribution(coffees), [coffees]);
-  const recentCoffees = useMemo(() => coffees.slice(-10).reverse(), [coffees]);
+  const recentCoffees = useMemo(() => coffees.slice(-5).reverse(), [coffees]);
 
   // Series completas (todo el histórico) para la vista ampliada de cada gráfico.
   const dailyFull = useMemo(() => dailySeries(coffees, now, 'all'), [coffees, now]);
@@ -427,8 +427,8 @@ export default function PublicProfilePage() {
             {profile.showHistory && recentCoffees.length > 0 && (
               <Card>
                 <CardHeader
-                  title="Últimos cafés"
-                  subtitle="Los 10 más recientes"
+                  title="Últimas bebidas"
+                  subtitle="Las 5 más recientes"
                   icon={<History className="size-4" aria-hidden />}
                 />
                 <ul className="divide-y divide-coffee-100">
