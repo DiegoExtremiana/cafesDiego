@@ -279,7 +279,7 @@ export default function StatsPage() {
         ];
 
         return (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {chartCards.map((chart, index) => (
               <ExpandableChart
                 key={chart.key}
@@ -290,7 +290,7 @@ export default function StatsPage() {
                 expandedMinWidth={chart.expandedMinWidth}
                 className={
                   chartCards.length % 2 === 1 && index === chartCards.length - 1
-                    ? 'col-span-2'
+                    ? 'lg:col-span-2 xl:col-span-1'
                     : ''
                 }
               >

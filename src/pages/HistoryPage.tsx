@@ -78,18 +78,18 @@ export default function HistoryPage() {
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <button
               type="button"
               onClick={() => setSelectedDate((date) => addDays(date, -1))}
               aria-label="Día anterior"
-              className="rounded-lg p-2 text-coffee-500 transition-colors hover:bg-coffee-100"
+              className="shrink-0 rounded-lg p-2 text-coffee-500 transition-colors hover:bg-coffee-100"
             >
               <ChevronLeft className="size-4.5" aria-hidden />
             </button>
-            <label className="relative inline-flex cursor-pointer items-center gap-2 rounded-xl border border-coffee-200 px-3 py-1.5 text-sm text-coffee-800">
-              <CalendarDays className="size-4 text-coffee-400" aria-hidden />
-              <span className="capitalize">{formatDateLong(selectedDate)}</span>
+            <label className="relative inline-flex min-w-0 cursor-pointer items-center gap-2 rounded-xl border border-coffee-200 px-3 py-1.5 text-sm text-coffee-800">
+              <CalendarDays className="size-4 shrink-0 text-coffee-400" aria-hidden />
+              <span className="min-w-0 truncate capitalize">{formatDateLong(selectedDate)}</span>
               <input
                 type="date"
                 value={dateInputValue(selectedDate)}
@@ -106,7 +106,7 @@ export default function HistoryPage() {
               onClick={() => setSelectedDate((date) => addDays(date, 1))}
               disabled={isToday}
               aria-label="Día siguiente"
-              className="rounded-lg p-2 text-coffee-500 transition-colors hover:bg-coffee-100 disabled:opacity-40"
+              className="shrink-0 rounded-lg p-2 text-coffee-500 transition-colors hover:bg-coffee-100 disabled:opacity-40"
             >
               <ChevronRight className="size-4.5" aria-hidden />
             </button>

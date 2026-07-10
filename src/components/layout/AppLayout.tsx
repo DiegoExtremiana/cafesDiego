@@ -74,14 +74,14 @@ export function AppLayout() {
         aria-label="Principal móvil"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-coffee-100 bg-white/95 backdrop-blur md:hidden"
       >
-        <div className="flex justify-around py-1.5">
+        <div className="flex py-1.5">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[10px] font-medium transition-colors ${
+                `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center text-[10px] font-medium transition-colors ${
                   isActive ? 'text-coffee-800' : 'text-coffee-400'
                 }`
               }

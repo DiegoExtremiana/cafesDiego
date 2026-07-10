@@ -51,20 +51,22 @@ export default function LandingPage() {
       <header className="border-b border-coffee-100">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Brand />
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1.5 sm:gap-2">
             <Link
               to="/login"
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-coffee-700 transition-colors hover:bg-coffee-100"
+              aria-label="Iniciar sesión"
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-coffee-700 transition-colors hover:bg-coffee-100 sm:px-4"
             >
               <LogIn className="size-4" aria-hidden />
-              Iniciar sesión
+              <span className="hidden sm:inline">Iniciar sesión</span>
             </Link>
             <Link
               to="/registro"
-              className="flex items-center gap-1.5 rounded-xl bg-coffee-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-coffee-700"
+              aria-label="Crear cuenta"
+              className="flex items-center gap-1.5 rounded-xl bg-coffee-600 px-2.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-coffee-700 sm:px-4"
             >
               <UserPlus className="size-4" aria-hidden />
-              Crear cuenta
+              <span className="hidden sm:inline">Crear cuenta</span>
             </Link>
           </nav>
         </div>
