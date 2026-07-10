@@ -89,6 +89,17 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
   return (
     <Modal open={open} title="¿Qué has tomado?" onClose={onClose}>
       <div className="flex flex-col gap-4">
+        <Toggle
+          checked={hasCaffeine}
+          onChange={handleCaffeineChange}
+          label="Con cafeína"
+          description="Desactiva si era descafeinado."
+          activeLabel="Con cafeína"
+          inactiveLabel="Sin cafeína"
+          activeIcon={<Zap className="size-4" aria-hidden />}
+          inactiveIcon={<ZapOff className="size-4" aria-hidden />}
+        />
+
         <div>
           <p className="mb-2 text-sm font-medium text-coffee-700">Tipo de bebida</p>
           <div className="flex flex-col">
@@ -156,17 +167,6 @@ export function CoffeeDetailsModal({ open, onClose, onSubmit }: CoffeeDetailsMod
             })}
           </div>
         </div>
-
-        <Toggle
-          checked={hasCaffeine}
-          onChange={handleCaffeineChange}
-          label="Con cafeína"
-          description="Desactiva si era descafeinado."
-          activeLabel="Con cafeína"
-          inactiveLabel="Sin cafeína"
-          activeIcon={<Zap className="size-4" aria-hidden />}
-          inactiveIcon={<ZapOff className="size-4" aria-hidden />}
-        />
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
