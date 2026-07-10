@@ -55,16 +55,18 @@ export function Toggle({
         )}
         <span>
           {hasLabelSwap ? (
-            <span className="relative block h-5 overflow-hidden text-sm font-medium text-coffee-900">
+            // Grid apilado: ambas etiquetas ocupan la misma celda, así el
+            // contenedor toma el ancho de la más larga (con absolute colapsaría a 0).
+            <span className="grid h-5 overflow-hidden text-sm font-medium text-coffee-900">
               <span
-                className={`absolute inset-0 transition-all duration-300 ${
+                className={`col-start-1 row-start-1 whitespace-nowrap transition-all duration-300 ${
                   checked ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
                 }`}
               >
                 {activeLabel}
               </span>
               <span
-                className={`absolute inset-0 transition-all duration-300 ${
+                className={`col-start-1 row-start-1 whitespace-nowrap transition-all duration-300 ${
                   checked ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'
                 }`}
               >
