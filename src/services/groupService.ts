@@ -1,9 +1,21 @@
 import { supabase } from '@/lib/supabase';
-import type { Group, GroupInvitation, RankingEntry, WeeklySeriesPoint } from '@/types/group';
+import type {
+  DailySeriesPoint,
+  Group,
+  GroupInvitation,
+  GroupMessage,
+  GroupRole,
+  RankingEntry,
+  UserSearchResult,
+} from '@/types/group';
 
 /** Zona horaria del navegador, para cortar día/semana en el servidor. */
 function clientTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function asRole(value: unknown): GroupRole {
+  return value === 'owner' || value === 'coadmin' ? value : 'member';
 }
 
 export async function createGroup(name: string): Promise<string> {
@@ -13,14 +25,29 @@ export async function createGroup(name: string): Promise<string> {
 }
 
 export async function listMyGroups(): Promise<Group[]> {
-  const { data, error } = await supabase.rpc('my_groups');
+  const { data, error } = await supabase.rpc('my_groups', { tz: clientTimezone() });
   if (error) throw new Error(error.message);
   return (data ?? []).map((row: Record<string, unknown>) => ({
     id: row.id as string,
     name: row.name as string,
     ownerId: row.owner_id as string,
     memberCount: row.member_count as number,
+    myRole: asRole(row.my_role),
+    myRank: Number(row.my_rank ?? 0),
     createdAt: new Date(row.created_at as string),
+  }));
+}
+
+export async function searchUsers(query: string): Promise<UserSearchResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const { data, error } = await supabase.rpc('search_users', { q });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    username: row.username as string,
+    displayName: (row.display_name as string) ?? '',
+    isPublic: Boolean(row.is_public),
   }));
 }
 
@@ -69,6 +96,24 @@ export async function deleteGroup(groupId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function setMemberRole(
+  groupId: string,
+  userId: string,
+  role: 'coadmin' | 'member',
+): Promise<void> {
+  const { error } = await supabase.rpc('set_member_role', {
+    gid: groupId,
+    target: userId,
+    new_role: role,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function kickMember(groupId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('kick_member', { gid: groupId, target: userId });
+  if (error) throw new Error(error.message);
+}
+
 export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> {
   const { data, error } = await supabase.rpc('group_ranking', {
     gid: groupId,
@@ -79,6 +124,7 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     userId: row.user_id as string,
     username: row.username as string,
     displayName: row.display_name as string,
+    role: asRole(row.role),
     todayMg: Number(row.today_mg),
     weekMg: Number(row.week_mg),
     totalMg: Number(row.total_mg),
@@ -88,21 +134,38 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
   }));
 }
 
-export async function getGroupWeeklySeries(
-  groupId: string,
-  weeks = 26,
-): Promise<WeeklySeriesPoint[]> {
-  const { data, error } = await supabase.rpc('group_weekly_series', {
+export async function getGroupDailySeries(groupId: string): Promise<DailySeriesPoint[]> {
+  const { data, error } = await supabase.rpc('group_daily_series', {
     gid: groupId,
     tz: clientTimezone(),
-    weeks,
   });
   if (error) throw new Error(error.message);
   return (data ?? []).map((row: Record<string, unknown>) => ({
     userId: row.user_id as string,
     username: row.username as string,
     displayName: row.display_name as string,
-    weekStart: row.week_start as string,
+    day: row.day as string,
     mg: Number(row.mg),
   }));
+}
+
+export async function listGroupMessages(groupId: string): Promise<GroupMessage[]> {
+  const { data, error } = await supabase.rpc('list_group_messages', { gid: groupId });
+  if (error) throw new Error(error.message);
+  // El RPC devuelve del más reciente al más antiguo; se invierte para el chat.
+  return (data ?? [])
+    .map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      userId: row.user_id as string,
+      username: row.username as string,
+      displayName: (row.display_name as string) ?? '',
+      body: row.body as string,
+      createdAt: new Date(row.created_at as string),
+    }))
+    .reverse();
+}
+
+export async function postGroupMessage(groupId: string, body: string): Promise<void> {
+  const { error } = await supabase.rpc('post_group_message', { gid: groupId, body });
+  if (error) throw new Error(error.message);
 }

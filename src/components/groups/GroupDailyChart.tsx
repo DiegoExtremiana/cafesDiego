@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { axisTick, chartColors, tooltipStyle } from '@/components/charts/theme';
 import { dateKeyToDate } from '@/utils/dates';
-import type { WeeklySeriesPoint } from '@/types/group';
+import type { DailySeriesPoint } from '@/types/group';
 
 /** Paleta para las líneas de cada miembro (se cicla si hay más miembros). */
 const SERIES_COLORS = [
@@ -27,7 +27,7 @@ const SERIES_COLORS = [
   '#84cc16',
 ];
 
-const weekLabelFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
+const dayLabelFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
 
 interface Member {
   userId: string;
@@ -35,17 +35,17 @@ interface Member {
   color: string;
 }
 
-interface GroupComparisonChartProps {
-  points: WeeklySeriesPoint[];
+interface GroupDailyChartProps {
+  points: DailySeriesPoint[];
   /** Usuario actual, para resaltar su línea. */
   currentUserId: string | null;
 }
 
-/** Gráfico de líneas: cafeína (mg) semana a semana de cada miembro del grupo. */
-export function GroupComparisonChart({ points, currentUserId }: GroupComparisonChartProps) {
+/** Gráfico de líneas: cafeína (mg) día a día de cada miembro del grupo. */
+export function GroupDailyChart({ points, currentUserId }: GroupDailyChartProps) {
   const { data, members } = useMemo(() => {
     const memberMap = new Map<string, Member>();
-    const weekMap = new Map<string, Record<string, number | string>>();
+    const dayMap = new Map<string, Record<string, number | string>>();
 
     for (const point of points) {
       if (!memberMap.has(point.userId)) {
@@ -56,18 +56,17 @@ export function GroupComparisonChart({ points, currentUserId }: GroupComparisonC
           color: SERIES_COLORS[index % SERIES_COLORS.length] ?? chartColors.coffee,
         });
       }
-      let row = weekMap.get(point.weekStart);
+      let row = dayMap.get(point.day);
       if (!row) {
-        row = { week: weekLabelFormat.format(dateKeyToDate(point.weekStart)) };
-        weekMap.set(point.weekStart, row);
+        row = { day: dayLabelFormat.format(dateKeyToDate(point.day)) };
+        dayMap.set(point.day, row);
       }
       row[point.userId] = point.mg;
     }
 
+    const sortedDays = [...dayMap.keys()].sort((a, b) => a.localeCompare(b));
     return {
-      data: [...weekMap.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([, row]) => row),
+      data: sortedDays.map((key) => dayMap.get(key) as Record<string, number | string>),
       members: [...memberMap.values()],
     };
   }, [points]);
@@ -76,11 +75,20 @@ export function GroupComparisonChart({ points, currentUserId }: GroupComparisonC
     return <p className="text-sm text-coffee-400">Aún no hay datos que comparar.</p>;
   }
 
+  // Con muchos días, muestra menos etiquetas del eje X para que no se amontonen.
+  const tickInterval = Math.max(0, Math.floor(data.length / 12));
+
   return (
     <ResponsiveContainer width="100%" height={340}>
       <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="week" tick={axisTick} tickLine={false} axisLine={{ stroke: chartColors.grid }} />
+        <XAxis
+          dataKey="day"
+          tick={axisTick}
+          tickLine={false}
+          axisLine={{ stroke: chartColors.grid }}
+          interval={tickInterval}
+        />
         <YAxis
           allowDecimals={false}
           tick={axisTick}
@@ -101,7 +109,7 @@ export function GroupComparisonChart({ points, currentUserId }: GroupComparisonC
               name={isMe ? `${member.name} (tú)` : member.name}
               stroke={member.color}
               strokeWidth={isMe ? 3.5 : 2}
-              dot={{ r: 2.5, fill: member.color }}
+              dot={false}
               activeDot={{ r: 5 }}
               connectNulls
               animationDuration={500}

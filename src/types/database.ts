@@ -89,12 +89,14 @@ export type Database = {
         Returns: string;
       };
       my_groups: {
-        Args: Record<PropertyKey, never>;
+        Args: { tz: string };
         Returns: {
           id: string;
           name: string;
           owner_id: string;
           member_count: number;
+          my_role: string;
+          my_rank: number;
           created_at: string;
         }[];
       };
@@ -135,6 +137,7 @@ export type Database = {
           user_id: string;
           username: string;
           display_name: string;
+          role: string;
           today_mg: number;
           week_mg: number;
           total_mg: number;
@@ -152,6 +155,48 @@ export type Database = {
           week_start: string;
           mg: number;
         }[];
+      };
+      group_daily_series: {
+        Args: { gid: string; tz: string };
+        Returns: {
+          user_id: string;
+          username: string;
+          display_name: string;
+          day: string;
+          mg: number;
+        }[];
+      };
+      search_users: {
+        Args: { q: string };
+        Returns: {
+          id: string;
+          username: string;
+          display_name: string;
+          is_public: boolean;
+        }[];
+      };
+      post_group_message: {
+        Args: { gid: string; body: string };
+        Returns: string;
+      };
+      list_group_messages: {
+        Args: { gid: string; lim?: number };
+        Returns: {
+          id: string;
+          user_id: string;
+          username: string;
+          display_name: string;
+          body: string;
+          created_at: string;
+        }[];
+      };
+      set_member_role: {
+        Args: { gid: string; target: string; new_role: string };
+        Returns: undefined;
+      };
+      kick_member: {
+        Args: { gid: string; target: string };
+        Returns: undefined;
       };
     };
     Enums: { [_ in never]: never };

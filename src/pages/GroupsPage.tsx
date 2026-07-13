@@ -1,19 +1,16 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Check, Mail, Plus, Users, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Check, Mail, Users, X } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GroupCard } from '@/components/groups/GroupCard';
+import { GroupSearchBar } from '@/components/groups/GroupSearchBar';
+import { CreateGroupModal } from '@/components/groups/CreateGroupModal';
+import { GroupListItem } from '@/components/groups/GroupListItem';
+import { GroupDetailModal } from '@/components/groups/GroupDetailModal';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  createGroup,
-  listMyGroups,
-  listMyInvitations,
-  respondInvitation,
-} from '@/services/groupService';
+import { listMyGroups, listMyInvitations, respondInvitation } from '@/services/groupService';
 import type { Group, GroupInvitation } from '@/types/group';
 
 export default function GroupsPage() {
@@ -22,8 +19,8 @@ export default function GroupsPage() {
   const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [newName, setNewName] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -45,23 +42,6 @@ export default function GroupsPage() {
     void load();
   }, [load]);
 
-  const handleCreate = async (event: FormEvent) => {
-    event.preventDefault();
-    const name = newName.trim();
-    if (!name) return;
-    setCreating(true);
-    setError(null);
-    try {
-      await createGroup(name);
-      setNewName('');
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo crear el grupo.');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleRespond = async (invitationId: string, accept: boolean) => {
     setRespondingId(invitationId);
     try {
@@ -74,11 +54,21 @@ export default function GroupsPage() {
     }
   };
 
+  // El grupo abierto se toma siempre de la lista recargada, para que refleje
+  // cambios de rol/miembros al instante.
+  const openGroup = groups?.find((group) => group.id === openGroupId) ?? null;
+
   return (
     <div className="flex flex-col gap-5 animate-fade-in">
       <h1 className="text-xl font-bold text-coffee-900">Grupos</h1>
 
       {error && <Alert variant="error">{error}</Alert>}
+
+      <GroupSearchBar
+        myGroups={groups ?? []}
+        onOpenGroup={(group) => setOpenGroupId(group.id)}
+        onCreateClick={() => setCreateOpen(true)}
+      />
 
       {invitations.length > 0 && (
         <Card className="border-coffee-300 bg-coffee-50/60">
@@ -128,48 +118,35 @@ export default function GroupsPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader
-          title="Crear un grupo"
-          subtitle="Invita a tus amigos y ved quién bebe más"
-          icon={<Plus className="size-4" aria-hidden />}
-        />
-        <form onSubmit={handleCreate} className="flex items-end gap-2">
-          <div className="flex-1">
-            <Input
-              label="Nombre del grupo"
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder="La oficina cafeinada"
-              maxLength={40}
-            />
-          </div>
-          <Button type="submit" loading={creating} disabled={!newName.trim()}>
-            <Plus className="size-4" aria-hidden />
-            Crear
-          </Button>
-        </form>
-      </Card>
-
       {groups === null ? (
         <Spinner label="Cargando grupos..." />
       ) : groups.length === 0 ? (
         <EmptyState
           icon={<Users className="size-10" aria-hidden />}
           title="Todavía no estás en ningún grupo"
-          description="Crea uno e invita a tus amigos, o espera a que te inviten para empezar a compararos."
+          description="Crea uno con el botón + e invita a tus amigos, o espera a que te inviten para empezar a compararos."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {groups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              currentUserId={user?.id ?? null}
-              onChanged={load}
-            />
+            <GroupListItem key={group.id} group={group} onOpen={() => setOpenGroupId(group.id)} />
           ))}
         </div>
+      )}
+
+      <CreateGroupModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={load}
+      />
+
+      {openGroup && (
+        <GroupDetailModal
+          group={openGroup}
+          currentUserId={user?.id ?? null}
+          onClose={() => setOpenGroupId(null)}
+          onChanged={load}
+        />
       )}
     </div>
   );
