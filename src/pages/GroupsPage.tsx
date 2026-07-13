@@ -10,6 +10,7 @@ import { CreateGroupModal } from '@/components/groups/CreateGroupModal';
 import { GroupListItem } from '@/components/groups/GroupListItem';
 import { GroupDetailModal } from '@/components/groups/GroupDetailModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { listMyGroups, listMyInvitations, respondInvitation } from '@/services/groupService';
 import type { Group, GroupInvitation } from '@/types/group';
 
@@ -41,6 +42,9 @@ export default function GroupsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Refresca la lista al volver a la pestaña (otro pudo invitarte, unirse, etc.).
+  useVisibilityRefetch(load);
 
   const handleRespond = async (invitationId: string, accept: boolean) => {
     setRespondingId(invitationId);

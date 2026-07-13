@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Crown, ShieldCheck, ShieldMinus, ShieldPlus, Trophy, UserMinus } from 'lucide-react';
 import { Alert } from '@/components/ui/Alert';
 import { Avatar } from '@/components/ui/Avatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getGroupRanking, kickMember, setMemberRole } from '@/services/groupService';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import { espressoEquivalent } from '@/types/coffee';
 import type { Group, GroupRole, RankingEntry } from '@/types/group';
@@ -46,7 +47,7 @@ export function GroupMembersList({
 
   const canModerate = group.myRole === 'owner' || group.myRole === 'coadmin';
 
-  const load = () => {
+  const load = useCallback(() => {
     const id = ++reloadId.current;
     getGroupRanking(group.id)
       .then((rows) => {
@@ -57,15 +58,20 @@ export function GroupMembersList({
           setError(err instanceof Error ? err.message : 'No se pudo cargar el ranking.');
         }
       });
-  };
+  }, [group.id]);
 
+  // Carga inicial + sondeo periódico (el ranking depende de los cafés de otros
+  // miembros, que no llegan por realtime debido a la RLS de solo-RPC).
   useEffect(() => {
     load();
+    const timer = setInterval(load, 12000);
     return () => {
       reloadId.current++;
+      clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group.id]);
+  }, [load]);
+
+  useVisibilityRefetch(load);
 
   const mgOf = (entry: RankingEntry): number =>
     metric === 'today' ? entry.todayMg : metric === 'week' ? entry.weekMg : entry.totalMg;

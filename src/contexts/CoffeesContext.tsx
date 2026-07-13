@@ -7,8 +7,10 @@ import {
   type ReactNode,
 } from 'react';
 import * as coffeeService from '@/services/coffeeService';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import type { Coffee, CoffeeDetails } from '@/types/coffee';
+import type { Coffee, CoffeeDetails, CoffeeType } from '@/types/coffee';
+import type { CoffeeRow } from '@/types/database';
 
 export interface CoffeesContextValue {
   /** Todos los cafés del usuario, en orden cronológico ascendente. */
@@ -63,6 +65,44 @@ export function CoffeesProvider({ children }: { children: ReactNode }) {
       });
     return () => {
       cancelled = true;
+    };
+  }, [userId]);
+
+  // Tiempo real: refleja los cafés añadidos/editados/borrados en otros
+  // dispositivos o pestañas. Reconcilia por id, así que no duplica el update
+  // optimista local. (Requiere la tabla `coffees` en la publicación
+  // supabase_realtime; sin ella, simplemente no llegan eventos.)
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`coffees-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'coffees', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          setCoffees((current) => {
+            if (payload.eventType === 'DELETE') {
+              const oldId = (payload.old as { id?: string }).id;
+              return oldId ? current.filter((coffee) => coffee.id !== oldId) : current;
+            }
+            const row = payload.new as CoffeeRow;
+            const coffee: Coffee = {
+              id: row.id,
+              userId: row.user_id,
+              takenAt: new Date(row.taken_at),
+              type: row.type as CoffeeType,
+              hasCaffeine: row.has_caffeine,
+            };
+            return insertSorted(
+              current.filter((existing) => existing.id !== coffee.id),
+              coffee,
+            );
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
     };
   }, [userId]);
 

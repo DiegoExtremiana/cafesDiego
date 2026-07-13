@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, LineChart, LogOut, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +9,7 @@ import { GroupMembersList } from './GroupMembersList';
 import { GroupMessages } from './GroupMessages';
 import { GroupDailyChartPanel } from './GroupDailyChartPanel';
 import { deleteGroup, getGroupDailySeries, leaveGroup } from '@/services/groupService';
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import type { DailySeriesPoint, Group } from '@/types/group';
 
 /** Vistas navegables al estilo WhatsApp: chat → descripción → gráfico. */
@@ -67,6 +68,15 @@ export function GroupDetailModal({
         setSeriesError(err instanceof Error ? err.message : 'No se pudo cargar la comparativa.'),
       );
   }, [open, view, series, groupId]);
+
+  // Refresca la comparativa al volver a la pestaña si el gráfico está abierto.
+  const refetchSeries = useCallback(() => {
+    if (view !== 'chart' || !groupId) return;
+    getGroupDailySeries(groupId)
+      .then(setSeries)
+      .catch(() => {});
+  }, [view, groupId]);
+  useVisibilityRefetch(refetchSeries);
 
   if (!g) return null;
 
