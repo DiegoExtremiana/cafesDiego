@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LineChart, LogOut, MessageSquare, Settings, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +14,9 @@ import type { DailySeriesPoint, Group } from '@/types/group';
 type Section = 'usuarios' | 'grafico' | 'mensajes' | 'ajustes';
 
 interface GroupDetailModalProps {
-  group: Group;
+  open: boolean;
+  /** Grupo abierto; null cuando está cerrado (se conserva el último para la salida). */
+  group: Group | null;
   currentUserId: string | null;
   onClose: () => void;
   /** Recarga la lista de grupos de la página (roles, expulsiones, salidas, borrado). */
@@ -22,9 +24,18 @@ interface GroupDetailModalProps {
 }
 
 /** Modal de detalle de un grupo, con secciones navegables. */
-export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: GroupDetailModalProps) {
-  const isOwner = group.myRole === 'owner';
-  const canSeeSettings = isOwner || group.myRole === 'coadmin';
+export function GroupDetailModal({
+  open,
+  group,
+  currentUserId,
+  onClose,
+  onChanged,
+}: GroupDetailModalProps) {
+  // Conserva el último grupo mientras se reproduce la animación de cierre.
+  const lastGroup = useRef<Group | null>(null);
+  if (group) lastGroup.current = group;
+  const g = group ?? lastGroup.current;
+  const groupId = g?.id ?? null;
 
   const [section, setSection] = useState<Section>('usuarios');
   const [series, setSeries] = useState<DailySeriesPoint[] | null>(null);
@@ -32,15 +43,29 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
+  // Reinicia el estado al abrir un grupo distinto.
   useEffect(() => {
-    if (section !== 'grafico' || series !== null) return;
+    setSection('usuarios');
+    setSeries(null);
     setSeriesError(null);
-    getGroupDailySeries(group.id)
+    setConfirmRemove(false);
+    setRemoveError(null);
+  }, [groupId]);
+
+  useEffect(() => {
+    if (!open || section !== 'grafico' || series !== null || !groupId) return;
+    setSeriesError(null);
+    getGroupDailySeries(groupId)
       .then(setSeries)
       .catch((err) =>
         setSeriesError(err instanceof Error ? err.message : 'No se pudo cargar la comparativa.'),
       );
-  }, [section, series, group.id]);
+  }, [open, section, series, groupId]);
+
+  if (!g) return null;
+
+  const isOwner = g.myRole === 'owner';
+  const canSeeSettings = isOwner || g.myRole === 'coadmin';
 
   const tabs: { key: Section; label: string; icon: typeof Users }[] = [
     { key: 'usuarios', label: 'Usuarios', icon: Users },
@@ -54,8 +79,8 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
   const handleRemove = async () => {
     setRemoveError(null);
     try {
-      if (isOwner) await deleteGroup(group.id);
-      else await leaveGroup(group.id);
+      if (isOwner) await deleteGroup(g.id);
+      else await leaveGroup(g.id);
       onChanged();
       onClose();
     } catch (err) {
@@ -65,7 +90,7 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
   };
 
   return (
-    <Modal open title={group.name} onClose={onClose} size="xl">
+    <Modal open={open} title={g.name} onClose={onClose} size="xl">
       <div className="flex flex-col gap-4">
         <nav
           className="flex gap-1 overflow-x-auto rounded-xl border border-coffee-200 bg-white p-1"
@@ -90,7 +115,7 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
         {removeError && <Alert variant="error">{removeError}</Alert>}
 
         {section === 'usuarios' && (
-          <GroupMembersList group={group} currentUserId={currentUserId} onChanged={onChanged} />
+          <GroupMembersList group={g} currentUserId={currentUserId} onChanged={onChanged} />
         )}
 
         {section === 'grafico' && (
@@ -115,7 +140,7 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
         )}
 
         {section === 'mensajes' && (
-          <GroupMessages groupId={group.id} currentUserId={currentUserId} />
+          <GroupMessages groupId={g.id} currentUserId={currentUserId} />
         )}
 
         {section === 'ajustes' && (
@@ -125,7 +150,7 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
                 <div>
                   <p className="text-sm font-semibold text-red-800">Eliminar grupo</p>
                   <p className="text-xs text-red-600/90">
-                    Se eliminará «{group.name}» para todos sus miembros. Esta acción no se puede
+                    Se eliminará «{g.name}» para todos sus miembros. Esta acción no se puede
                     deshacer.
                   </p>
                 </div>
@@ -163,8 +188,8 @@ export function GroupDetailModal({ group, currentUserId, onClose, onChanged }: G
         title={isOwner ? 'Eliminar grupo' : 'Salir del grupo'}
         message={
           isOwner
-            ? `Se eliminará «${group.name}» para todos sus miembros. Esta acción no se puede deshacer.`
-            : `Vas a salir de «${group.name}». Podrás volver si te invitan de nuevo.`
+            ? `Se eliminará «${g.name}» para todos sus miembros. Esta acción no se puede deshacer.`
+            : `Vas a salir de «${g.name}». Podrás volver si te invitan de nuevo.`
         }
         confirmLabel={isOwner ? 'Eliminar' : 'Salir'}
         onConfirm={handleRemove}

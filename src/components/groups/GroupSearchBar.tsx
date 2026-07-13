@@ -175,13 +175,12 @@ export function GroupSearchBar({ myGroups, onOpenGroup, onCreateClick }: GroupSe
         </button>
       </div>
 
-      {selectedUser && (
-        <UserActionsModal
-          user={selectedUser}
-          myGroups={myGroups}
-          onClose={() => setSelectedUser(null)}
-        />
-      )}
+      <UserActionsModal
+        open={selectedUser !== null}
+        user={selectedUser}
+        myGroups={myGroups}
+        onClose={() => setSelectedUser(null)}
+      />
     </>
   );
 }

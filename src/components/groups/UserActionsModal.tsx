@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ExternalLink, UserPlus } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
@@ -8,20 +8,32 @@ import type { Group, UserSearchResult } from '@/types/group';
 type InviteState = { status: 'idle' | 'loading' | 'ok' | 'error'; message?: string };
 
 interface UserActionsModalProps {
-  user: UserSearchResult;
+  open: boolean;
+  /** Usuario seleccionado; null cuando está cerrado (se conserva para la salida). */
+  user: UserSearchResult | null;
   /** Grupos del usuario actual a los que puede invitar. */
   myGroups: Group[];
   onClose: () => void;
 }
 
 /** Menú de acciones sobre un usuario encontrado: ver perfil o invitarle a un grupo. */
-export function UserActionsModal({ user, myGroups, onClose }: UserActionsModalProps) {
+export function UserActionsModal({ open, user, myGroups, onClose }: UserActionsModalProps) {
+  const lastUser = useRef<UserSearchResult | null>(null);
+  if (user) lastUser.current = user;
+  const u = user ?? lastUser.current;
+
   const [states, setStates] = useState<Record<string, InviteState>>({});
 
+  // Reinicia el estado de invitaciones al cambiar de usuario.
+  useEffect(() => {
+    setStates({});
+  }, [u?.id]);
+
   const invite = async (group: Group) => {
+    if (!u) return;
     setStates((current) => ({ ...current, [group.id]: { status: 'loading' } }));
     try {
-      await inviteToGroup(group.id, user.username);
+      await inviteToGroup(group.id, u.username);
       setStates((current) => ({ ...current, [group.id]: { status: 'ok' } }));
     } catch (err) {
       setStates((current) => ({
@@ -34,24 +46,26 @@ export function UserActionsModal({ user, myGroups, onClose }: UserActionsModalPr
     }
   };
 
+  if (!u) return null;
+
   return (
-    <Modal open title={user.displayName || user.username} onClose={onClose}>
+    <Modal open={open} title={u.displayName || u.username} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-full bg-coffee-100 text-base font-bold uppercase text-coffee-600">
-            {(user.displayName || user.username).slice(0, 1)}
+            {(u.displayName || u.username).slice(0, 1)}
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-coffee-900">
-              {user.displayName || user.username}
+              {u.displayName || u.username}
             </p>
-            <p className="truncate text-xs text-coffee-400">@{user.username}</p>
+            <p className="truncate text-xs text-coffee-400">@{u.username}</p>
           </div>
         </div>
 
-        {user.isPublic ? (
+        {u.isPublic ? (
           <Link
-            to={`/u/${user.username}`}
+            to={`/u/${u.username}`}
             onClick={onClose}
             className="flex items-center justify-between rounded-xl border border-coffee-200 bg-white px-3.5 py-2.5 text-sm font-medium text-coffee-800 transition-colors hover:bg-coffee-50"
           >

@@ -140,14 +140,13 @@ export default function GroupsPage() {
         onCreated={load}
       />
 
-      {openGroup && (
-        <GroupDetailModal
-          group={openGroup}
-          currentUserId={user?.id ?? null}
-          onClose={() => setOpenGroupId(null)}
-          onChanged={load}
-        />
-      )}
+      <GroupDetailModal
+        open={openGroupId !== null}
+        group={openGroup}
+        currentUserId={user?.id ?? null}
+        onClose={() => setOpenGroupId(null)}
+        onChanged={load}
+      />
     </div>
   );
 }
