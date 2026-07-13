@@ -20,6 +20,8 @@ const METRICS: { key: Metric; label: string }[] = [
 interface GroupMembersListProps {
   group: Group;
   currentUserId: string | null;
+  /** Métrica inicial del ranking (por defecto 'total'). */
+  defaultMetric?: Metric;
   /** Se llama cuando cambia la composición o los roles (para recargar la lista). */
   onChanged: () => void;
 }
@@ -28,10 +30,15 @@ interface GroupMembersListProps {
  * Sección "Usuarios": miembros ordenados de MENOS a MÁS cafeína (quien menos
  * bebe es el nº 1). El creador y los co-admins pueden gestionar a los demás.
  */
-export function GroupMembersList({ group, currentUserId, onChanged }: GroupMembersListProps) {
+export function GroupMembersList({
+  group,
+  currentUserId,
+  defaultMetric = 'total',
+  onChanged,
+}: GroupMembersListProps) {
   const [ranking, setRanking] = useState<RankingEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [metric, setMetric] = useState<Metric>('total');
+  const [metric, setMetric] = useState<Metric>(defaultMetric);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmKick, setConfirmKick] = useState<RankingEntry | null>(null);

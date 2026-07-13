@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LineChart, LogOut, MessageSquare, Settings, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LineChart, LogOut, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
@@ -11,7 +11,8 @@ import { GroupDailyChartPanel } from './GroupDailyChartPanel';
 import { deleteGroup, getGroupDailySeries, leaveGroup } from '@/services/groupService';
 import type { DailySeriesPoint, Group } from '@/types/group';
 
-type Section = 'usuarios' | 'grafico' | 'mensajes' | 'ajustes';
+/** Vistas navegables al estilo WhatsApp: chat → descripción → gráfico. */
+type View = 'chat' | 'info' | 'chart';
 
 interface GroupDetailModalProps {
   open: boolean;
@@ -23,7 +24,11 @@ interface GroupDetailModalProps {
   onChanged: () => void;
 }
 
-/** Modal de detalle de un grupo, con secciones navegables. */
+/**
+ * Detalle de un grupo al estilo WhatsApp: abre en el chat; desde su cabecera se
+ * accede a la "Descripción del grupo" (miembros por ranking semanal, gráfico y
+ * ajustes).
+ */
 export function GroupDetailModal({
   open,
   group,
@@ -37,7 +42,7 @@ export function GroupDetailModal({
   const g = group ?? lastGroup.current;
   const groupId = g?.id ?? null;
 
-  const [section, setSection] = useState<Section>('usuarios');
+  const [view, setView] = useState<View>('chat');
   const [series, setSeries] = useState<DailySeriesPoint[] | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -45,34 +50,28 @@ export function GroupDetailModal({
 
   // Reinicia el estado al abrir un grupo distinto.
   useEffect(() => {
-    setSection('usuarios');
+    setView('chat');
     setSeries(null);
     setSeriesError(null);
     setConfirmRemove(false);
     setRemoveError(null);
   }, [groupId]);
 
+  // Carga la serie del gráfico la primera vez que se abre esa vista.
   useEffect(() => {
-    if (!open || section !== 'grafico' || series !== null || !groupId) return;
+    if (!open || view !== 'chart' || series !== null || !groupId) return;
     setSeriesError(null);
     getGroupDailySeries(groupId)
       .then(setSeries)
       .catch((err) =>
         setSeriesError(err instanceof Error ? err.message : 'No se pudo cargar la comparativa.'),
       );
-  }, [open, section, series, groupId]);
+  }, [open, view, series, groupId]);
 
   if (!g) return null;
 
   const isOwner = g.myRole === 'owner';
   const canSeeSettings = isOwner || g.myRole === 'coadmin';
-
-  const tabs: { key: Section; label: string; icon: typeof Users }[] = [
-    { key: 'usuarios', label: 'Usuarios', icon: Users },
-    { key: 'grafico', label: 'Gráfico', icon: LineChart },
-    { key: 'mensajes', label: 'Mensajes', icon: MessageSquare },
-    ...(canSeeSettings ? [{ key: 'ajustes' as const, label: 'Ajustes', icon: Settings }] : []),
-  ];
 
   const handleRemove = async () => {
     setRemoveError(null);
@@ -87,93 +86,138 @@ export function GroupDetailModal({
     }
   };
 
+  const backButton = (label: string, to: View) => (
+    <button
+      type="button"
+      onClick={() => setView(to)}
+      className="-ml-1 inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-sm font-medium text-coffee-500 transition-colors hover:bg-coffee-50 hover:text-coffee-800"
+    >
+      <ArrowLeft className="size-4" aria-hidden />
+      {label}
+    </button>
+  );
+
   return (
     <Modal open={open} title={g.name} onClose={onClose} size="xl">
       <div className="flex flex-col gap-4">
-        <nav
-          className="flex gap-1 overflow-x-auto rounded-xl border border-coffee-200 bg-white p-1"
-          aria-label="Secciones del grupo"
-        >
-          {tabs.map(({ key, label, icon: Icon }) => (
+        {view === 'chat' && (
+          <>
             <button
-              key={key}
               type="button"
-              onClick={() => setSection(key)}
-              aria-pressed={section === key}
-              className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                section === key ? 'bg-coffee-600 text-white' : 'text-coffee-500 hover:bg-coffee-50'
-              }`}
+              onClick={() => setView('info')}
+              className="flex items-center gap-3 rounded-xl border border-coffee-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-coffee-50"
             >
-              <Icon className="size-4" aria-hidden />
-              {label}
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-coffee-100 text-coffee-600">
+                <Users className="size-5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-coffee-900">
+                  Descripción del grupo
+                </span>
+                <span className="block truncate text-xs text-coffee-400">
+                  {g.memberCount} {g.memberCount === 1 ? 'miembro' : 'miembros'} · miembros, gráfico
+                  y ajustes
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-coffee-300" aria-hidden />
             </button>
-          ))}
-        </nav>
-
-        {removeError && <Alert variant="error">{removeError}</Alert>}
-
-        {section === 'usuarios' && (
-          <GroupMembersList group={g} currentUserId={currentUserId} onChanged={onChanged} />
+            <GroupMessages groupId={g.id} currentUserId={currentUserId} />
+          </>
         )}
 
-        {section === 'grafico' && (
-          <div>
+        {view === 'info' && (
+          <>
+            {backButton('Volver al chat', 'chat')}
+            {removeError && <Alert variant="error">{removeError}</Alert>}
+
+            <section className="flex flex-col gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-coffee-900">Miembros</h3>
+                <p className="text-xs text-coffee-400">
+                  Ranking semanal, de quien menos cafeína bebe a quien más.
+                </p>
+              </div>
+              <GroupMembersList
+                group={g}
+                currentUserId={currentUserId}
+                defaultMetric="week"
+                onChanged={onChanged}
+              />
+            </section>
+
+            <button
+              type="button"
+              onClick={() => setView('chart')}
+              className="flex items-center gap-3 rounded-xl border border-coffee-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-coffee-50"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-coffee-100 text-coffee-600">
+                <LineChart className="size-4.5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-coffee-900">Gráfico comparativo</span>
+                <span className="block text-xs text-coffee-400">Cafeína por día de cada miembro</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-coffee-300" aria-hidden />
+            </button>
+
+            {canSeeSettings && (
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold text-coffee-900">Ajustes</h3>
+                {isOwner ? (
+                  <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/60 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-red-800">Eliminar grupo</p>
+                      <p className="text-xs text-red-600/90">
+                        Se eliminará «{g.name}» para todos sus miembros. Esta acción no se puede
+                        deshacer.
+                      </p>
+                    </div>
+                    <div>
+                      <Button variant="danger" size="sm" onClick={() => setConfirmRemove(true)}>
+                        <Trash2 className="size-4" aria-hidden />
+                        Eliminar grupo
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-coffee-200 bg-coffee-50/60 p-4">
+                    <p className="text-sm font-medium text-coffee-800">Eres co-administrador</p>
+                    <p className="text-xs text-coffee-500">
+                      Puedes gestionar y expulsar miembros desde la lista de arriba. Solo el creador
+                      del grupo puede eliminarlo.
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {!isOwner && (
+              <div className="flex justify-end border-t border-coffee-100 pt-3">
+                <Button variant="ghost" size="sm" onClick={() => setConfirmRemove(true)}>
+                  <LogOut className="size-4" aria-hidden />
+                  Salir del grupo
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {view === 'chart' && (
+          <>
+            {backButton('Volver a la descripción', 'info')}
             {seriesError ? (
               <Alert variant="error">{seriesError}</Alert>
             ) : series === null ? (
               <Spinner label="Cargando comparativa…" />
             ) : (
               <>
-                <p className="mb-3 text-xs text-coffee-400">
+                <p className="text-xs text-coffee-400">
                   Cafeína (mg) por día de cada miembro. Tu línea aparece resaltada.
                 </p>
                 <GroupDailyChartPanel points={series} currentUserId={currentUserId} />
               </>
             )}
-          </div>
-        )}
-
-        {section === 'mensajes' && (
-          <GroupMessages groupId={g.id} currentUserId={currentUserId} />
-        )}
-
-        {section === 'ajustes' && (
-          <div className="flex flex-col gap-3">
-            {isOwner ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/60 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-red-800">Eliminar grupo</p>
-                  <p className="text-xs text-red-600/90">
-                    Se eliminará «{g.name}» para todos sus miembros. Esta acción no se puede
-                    deshacer.
-                  </p>
-                </div>
-                <div>
-                  <Button variant="danger" size="sm" onClick={() => setConfirmRemove(true)}>
-                    <Trash2 className="size-4" aria-hidden />
-                    Eliminar grupo
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-coffee-200 bg-coffee-50/60 p-4">
-                <p className="text-sm font-medium text-coffee-800">Eres co-administrador</p>
-                <p className="text-xs text-coffee-500">
-                  Puedes gestionar y expulsar miembros desde la sección «Usuarios». Solo el creador
-                  del grupo puede eliminarlo.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {!isOwner && (
-          <div className="flex justify-end border-t border-coffee-100 pt-3">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmRemove(true)}>
-              <LogOut className="size-4" aria-hidden />
-              Salir del grupo
-            </Button>
-          </div>
+          </>
         )}
       </div>
 
