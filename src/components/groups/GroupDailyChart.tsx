@@ -31,6 +31,7 @@ export interface ChartMember {
   name: string;
   color: string;
   avatarUrl: string | null;
+  isPublic: boolean;
 }
 
 /** Deriva los miembros (con color estable) de la serie, en orden de aparición. */
@@ -44,6 +45,7 @@ export function buildChartMembers(points: DailySeriesPoint[]): ChartMember[] {
         name: point.displayName || point.username,
         color: SERIES_COLORS[index % SERIES_COLORS.length] ?? chartColors.coffee,
         avatarUrl: point.avatarUrl,
+        isPublic: point.isPublic,
       });
     }
   }

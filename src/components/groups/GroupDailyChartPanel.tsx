@@ -30,7 +30,7 @@ export function GroupDailyChartPanel({ points, currentUserId }: GroupDailyChartP
 
   return (
     <div className="flex gap-3">
-      <ul className="flex max-h-[320px] w-28 shrink-0 flex-col gap-1.5 overflow-y-auto pr-1 sm:w-36">
+      <ul className="flex max-h-80 w-28 shrink-0 flex-col gap-1.5 overflow-y-auto pr-1 sm:w-36">
         {members.map((member) => {
           const isMe = member.userId === currentUserId;
           return (
@@ -41,7 +41,11 @@ export function GroupDailyChartPanel({ points, currentUserId }: GroupDailyChartP
                 aria-hidden
               />
               <Avatar
-                user={{ displayName: member.name, avatarUrl: member.avatarUrl }}
+                user={{
+                  displayName: member.name,
+                  avatarUrl: member.avatarUrl,
+                  isPublic: member.isPublic,
+                }}
                 className="size-6 text-[10px]"
               />
               <span

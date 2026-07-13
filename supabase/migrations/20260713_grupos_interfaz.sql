@@ -112,6 +112,7 @@ returns table (
   username text,
   display_name text,
   avatar_url text,
+  is_public boolean,
   role text,
   today_mg bigint,
   week_mg bigint,
@@ -130,6 +131,7 @@ as $$
     p.username,
     p.display_name,
     p.avatar_url,
+    p.is_public,
     gm.role,
     coalesce(sum(m.mg) filter (where m.is_today), 0) as today_mg,
     coalesce(sum(m.mg) filter (where m.is_week), 0) as week_mg,
@@ -153,7 +155,7 @@ as $$
   ) m on true
   where gm.group_id = gid
     and public.is_group_member(gid, auth.uid())
-  group by p.id, p.username, p.display_name, p.avatar_url, gm.role
+  group by p.id, p.username, p.display_name, p.avatar_url, p.is_public, gm.role
   order by total_mg asc, p.username;
 $$;
 
@@ -163,14 +165,14 @@ $$;
 -- va desde la primera entrada (el creador) hasta hoy. Día en zona del cliente.
 drop function if exists public.group_daily_series(uuid, text);
 create or replace function public.group_daily_series(gid uuid, tz text)
-returns table (user_id uuid, username text, display_name text, avatar_url text, day date, mg bigint)
+returns table (user_id uuid, username text, display_name text, avatar_url text, is_public boolean, day date, mg bigint)
 language sql
 security definer
 set search_path = public
 stable
 as $$
   with members as (
-    select p.id, p.username, p.display_name, p.avatar_url,
+    select p.id, p.username, p.display_name, p.avatar_url, p.is_public,
       (gm.joined_at at time zone tz)::date as join_day
     from public.group_members gm
     join public.profiles p on p.id = gm.user_id
@@ -185,7 +187,7 @@ as $$
   ),
   grid as (
     -- Cada miembro solo tiene días desde que entró.
-    select m.id, m.username, m.display_name, m.avatar_url, d.day
+    select m.id, m.username, m.display_name, m.avatar_url, m.is_public, d.day
     from members m cross join days_list d
     where d.day >= m.join_day
   ),
@@ -205,6 +207,7 @@ as $$
     grid.username,
     grid.display_name,
     grid.avatar_url,
+    grid.is_public,
     grid.day,
     coalesce(agg.mg, 0)::bigint as mg
   from grid
@@ -244,6 +247,7 @@ returns table (
   username text,
   display_name text,
   avatar_url text,
+  is_public boolean,
   body text,
   created_at timestamptz
 )
@@ -252,7 +256,7 @@ security definer
 set search_path = public
 stable
 as $$
-  select m.id, m.user_id, p.username, p.display_name, p.avatar_url, m.body, m.created_at
+  select m.id, m.user_id, p.username, p.display_name, p.avatar_url, p.is_public, m.body, m.created_at
   from public.group_messages m
   join public.profiles p on p.id = m.user_id
   where m.group_id = gid and public.is_group_member(gid, auth.uid())

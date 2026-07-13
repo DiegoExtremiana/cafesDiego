@@ -126,6 +126,7 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     username: row.username as string,
     displayName: row.display_name as string,
     avatarUrl: (row.avatar_url as string) ?? null,
+    isPublic: Boolean(row.is_public),
     role: asRole(row.role),
     todayMg: Number(row.today_mg),
     weekMg: Number(row.week_mg),
@@ -147,6 +148,7 @@ export async function getGroupDailySeries(groupId: string): Promise<DailySeriesP
     username: row.username as string,
     displayName: row.display_name as string,
     avatarUrl: (row.avatar_url as string) ?? null,
+    isPublic: Boolean(row.is_public),
     day: row.day as string,
     mg: Number(row.mg),
   }));
@@ -163,6 +165,7 @@ export async function listGroupMessages(groupId: string): Promise<GroupMessage[]
       username: row.username as string,
       displayName: (row.display_name as string) ?? '',
       avatarUrl: (row.avatar_url as string) ?? null,
+      isPublic: Boolean(row.is_public),
       body: row.body as string,
       createdAt: new Date(row.created_at as string),
     }))

@@ -105,6 +105,7 @@ export function GroupMessages({ groupId, currentUserId }: GroupMessagesProps) {
                         displayName: message.displayName,
                         username: message.username,
                         avatarUrl: message.avatarUrl,
+                        isPublic: message.isPublic,
                       }}
                       className="size-7 text-[10px]"
                     />

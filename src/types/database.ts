@@ -143,6 +143,7 @@ export type Database = {
           username: string;
           display_name: string;
           avatar_url: string | null;
+          is_public: boolean;
           role: string;
           today_mg: number;
           week_mg: number;
@@ -169,6 +170,7 @@ export type Database = {
           username: string;
           display_name: string;
           avatar_url: string | null;
+          is_public: boolean;
           day: string;
           mg: number;
         }[];
@@ -195,6 +197,7 @@ export type Database = {
           username: string;
           display_name: string;
           avatar_url: string | null;
+          is_public: boolean;
           body: string;
           created_at: string;
         }[];

@@ -187,6 +187,7 @@ export function GroupMembersList({
                       displayName: entry.displayName,
                       username: entry.username,
                       avatarUrl: entry.avatarUrl,
+                      isPublic: entry.isPublic,
                     }}
                     className="size-8 text-xs"
                   />
