@@ -165,13 +165,25 @@ export function GroupMembersList({
             const isSelected = selectedId === entry.userId;
             return (
               <li key={entry.userId} className="flex flex-col">
-                <button
-                  type="button"
-                  disabled={!actionable}
-                  onClick={() => actionable && setSelectedId(isSelected ? null : entry.userId)}
+                <div
+                  role={actionable ? 'button' : undefined}
+                  tabIndex={actionable ? 0 : undefined}
+                  onClick={
+                    actionable ? () => setSelectedId(isSelected ? null : entry.userId) : undefined
+                  }
+                  onKeyDown={
+                    actionable
+                      ? (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedId(isSelected ? null : entry.userId);
+                          }
+                        }
+                      : undefined
+                  }
                   className={`flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                     isMe ? 'bg-coffee-50 ring-1 ring-coffee-200' : ''
-                  } ${actionable ? 'cursor-pointer hover:bg-coffee-100/70' : 'cursor-default'} ${
+                  } ${actionable ? 'cursor-pointer hover:bg-coffee-100/70' : ''} ${
                     isSelected ? 'bg-coffee-100' : ''
                   }`}
                 >
@@ -204,7 +216,7 @@ export function GroupMembersList({
                   <span className="shrink-0 text-sm font-bold tabular-nums text-coffee-800">
                     {formatMg(mg)}
                   </span>
-                </button>
+                </div>
 
                 {isSelected && actionable && (
                   <div className="ml-9 mt-1 flex flex-wrap gap-2 rounded-xl border border-coffee-100 bg-white p-2 animate-fade-in">
