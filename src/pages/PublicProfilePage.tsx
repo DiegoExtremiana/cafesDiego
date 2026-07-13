@@ -21,6 +21,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Brand } from '@/components/layout/Brand';
 import { Avatar } from '@/components/ui/Avatar';
+import { useAuth } from '@/hooks/useAuth';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
@@ -51,6 +52,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Sun }[] = [
 
 export default function PublicProfilePage() {
   const { username } = useParams();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState<LoadState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -167,12 +169,18 @@ export default function PublicProfilePage() {
     <div className="min-h-screen bg-cream-50">
       <header className="border-b border-coffee-100 bg-white/90">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Brand />
           <Link
-            to="/"
+            to={user ? '/panel' : '/'}
+            aria-label={user ? 'Ir a mi panel' : 'Ir al inicio'}
+            className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coffee-500"
+          >
+            <Brand />
+          </Link>
+          <Link
+            to={user ? '/panel' : '/'}
             className="text-sm font-medium text-coffee-500 underline-offset-2 hover:underline"
           >
-            Crea tu contador
+            {user ? 'Ir a mi panel' : 'Crea tu contador'}
           </Link>
         </div>
       </header>
