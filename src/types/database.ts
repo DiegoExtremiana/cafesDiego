@@ -15,6 +15,7 @@ export type ProfileRow = {
   max_daily_coffees: number | null;
   max_daily_caffeine: number | null;
   caffeine_limit_unit: string;
+  avatar_url: string | null;
   is_public: boolean;
   show_history: boolean;
   show_charts: boolean;
@@ -23,9 +24,13 @@ export type ProfileRow = {
   created_at: string;
 };
 
-export type ProfileInsert = Omit<ProfileRow, 'created_at' | 'caffeine_limit_unit'> & {
+export type ProfileInsert = Omit<
+  ProfileRow,
+  'created_at' | 'caffeine_limit_unit' | 'avatar_url'
+> & {
   created_at?: string;
   caffeine_limit_unit?: string;
+  avatar_url?: string | null;
 };
 
 export type ProfileUpdate = Partial<Omit<ProfileRow, 'id' | 'created_at'>>;
@@ -137,6 +142,7 @@ export type Database = {
           user_id: string;
           username: string;
           display_name: string;
+          avatar_url: string | null;
           role: string;
           today_mg: number;
           week_mg: number;
@@ -162,6 +168,7 @@ export type Database = {
           user_id: string;
           username: string;
           display_name: string;
+          avatar_url: string | null;
           day: string;
           mg: number;
         }[];
@@ -172,6 +179,7 @@ export type Database = {
           id: string;
           username: string;
           display_name: string;
+          avatar_url: string | null;
           is_public: boolean;
         }[];
       };
@@ -186,6 +194,7 @@ export type Database = {
           user_id: string;
           username: string;
           display_name: string;
+          avatar_url: string | null;
           body: string;
           created_at: string;
         }[];

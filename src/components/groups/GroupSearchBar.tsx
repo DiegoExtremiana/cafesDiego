@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, Plus, Search, Trophy } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import { searchUsers } from '@/services/groupService';
 import { UserActionsModal } from './UserActionsModal';
 import type { Group, UserSearchResult } from '@/types/group';
@@ -147,9 +148,7 @@ export function GroupSearchBar({ myGroups, onOpenGroup, onCreateClick }: GroupSe
                       onClick={() => openUser(user)}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-coffee-50"
                     >
-                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-coffee-100 text-xs font-bold uppercase text-coffee-600">
-                        {(user.displayName || user.username).slice(0, 1)}
-                      </span>
+                      <Avatar user={user} className="size-7 text-xs" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-coffee-900">
                           {user.displayName || user.username}

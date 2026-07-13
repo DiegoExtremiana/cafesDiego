@@ -10,6 +10,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Brand } from './Brand';
+import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { countPendingInvitations } from '@/services/groupService';
 
@@ -81,6 +82,7 @@ export function AppLayout() {
             })}
           </nav>
           <div className="flex items-center gap-3">
+            {profile && <Avatar user={profile} className="size-8 text-xs" />}
             <span className="hidden text-sm text-coffee-500 sm:block">
               {profile?.displayName || profile?.username}
             </span>

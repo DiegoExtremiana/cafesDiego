@@ -47,6 +47,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
     id: row.id as string,
     username: row.username as string,
     displayName: (row.display_name as string) ?? '',
+    avatarUrl: (row.avatar_url as string) ?? null,
     isPublic: Boolean(row.is_public),
   }));
 }
@@ -124,6 +125,7 @@ export async function getGroupRanking(groupId: string): Promise<RankingEntry[]> 
     userId: row.user_id as string,
     username: row.username as string,
     displayName: row.display_name as string,
+    avatarUrl: (row.avatar_url as string) ?? null,
     role: asRole(row.role),
     todayMg: Number(row.today_mg),
     weekMg: Number(row.week_mg),
@@ -144,6 +146,7 @@ export async function getGroupDailySeries(groupId: string): Promise<DailySeriesP
     userId: row.user_id as string,
     username: row.username as string,
     displayName: row.display_name as string,
+    avatarUrl: (row.avatar_url as string) ?? null,
     day: row.day as string,
     mg: Number(row.mg),
   }));
@@ -159,6 +162,7 @@ export async function listGroupMessages(groupId: string): Promise<GroupMessage[]
       userId: row.user_id as string,
       username: row.username as string,
       displayName: (row.display_name as string) ?? '',
+      avatarUrl: (row.avatar_url as string) ?? null,
       body: row.body as string,
       createdAt: new Date(row.created_at as string),
     }))

@@ -19,6 +19,7 @@ export interface RankingEntry {
   userId: string;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   role: GroupRole;
   todayMg: number;
   weekMg: number;
@@ -43,6 +44,7 @@ export interface DailySeriesPoint {
   userId: string;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   /** Día, clave YYYY-MM-DD. */
   day: string;
   mg: number;
@@ -63,6 +65,7 @@ export interface UserSearchResult {
   id: string;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   isPublic: boolean;
 }
 
@@ -72,6 +75,7 @@ export interface GroupMessage {
   userId: string;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   body: string;
   createdAt: Date;
 }

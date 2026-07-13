@@ -14,6 +14,7 @@ function mapProfile(row: ProfileRow): Profile {
     maxDailyCaffeine: row.max_daily_caffeine,
     // Tolerante a la migración pendiente: sin columna, se asume el modo por defecto.
     caffeineLimitUnit: row.caffeine_limit_unit === 'mg' ? 'mg' : 'cafes',
+    avatarUrl: row.avatar_url ?? null,
     isPublic: row.is_public,
     showHistory: row.show_history,
     showCharts: row.show_charts,
@@ -60,6 +61,7 @@ export async function updateProfile(
     update.max_daily_caffeine = settings.maxDailyCaffeine;
   if (settings.caffeineLimitUnit !== undefined)
     update.caffeine_limit_unit = settings.caffeineLimitUnit;
+  if (settings.avatarUrl !== undefined) update.avatar_url = settings.avatarUrl;
   if (settings.isPublic !== undefined) update.is_public = settings.isPublic;
   if (settings.showHistory !== undefined) update.show_history = settings.showHistory;
   if (settings.showCharts !== undefined) update.show_charts = settings.showCharts;

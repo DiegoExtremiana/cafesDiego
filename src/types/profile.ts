@@ -18,6 +18,8 @@ export interface Profile {
   maxDailyCaffeine: number | null;
   /** Modo en el que se introduce y muestra el límite de cafeína. */
   caffeineLimitUnit: CaffeineLimitUnit;
+  /** URL pública de la foto de perfil; null si usa el avatar por defecto. */
+  avatarUrl: string | null;
   isPublic: boolean;
   showHistory: boolean;
   showCharts: boolean;

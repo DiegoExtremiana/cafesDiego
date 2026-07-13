@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Send } from 'lucide-react';
 import { Alert } from '@/components/ui/Alert';
+import { Avatar } from '@/components/ui/Avatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { listGroupMessages, postGroupMessage } from '@/services/groupService';
 import { formatTime, toDateKey } from '@/utils/dates';
@@ -97,7 +98,17 @@ export function GroupMessages({ groupId, currentUserId }: GroupMessagesProps) {
                     {dayFormat.format(message.createdAt)}
                   </p>
                 )}
-                <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+                <div className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                  {!mine && (
+                    <Avatar
+                      user={{
+                        displayName: message.displayName,
+                        username: message.username,
+                        avatarUrl: message.avatarUrl,
+                      }}
+                      className="size-7 text-[10px]"
+                    />
+                  )}
                   <div
                     className={`max-w-[80%] rounded-2xl px-3 py-2 ${
                       mine

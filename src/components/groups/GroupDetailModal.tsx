@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { GroupMembersList } from './GroupMembersList';
 import { GroupMessages } from './GroupMessages';
-import { GroupDailyChart } from './GroupDailyChart';
+import { GroupDailyChartPanel } from './GroupDailyChartPanel';
 import { deleteGroup, getGroupDailySeries, leaveGroup } from '@/services/groupService';
 import type { DailySeriesPoint, Group } from '@/types/group';
 
@@ -74,8 +74,6 @@ export function GroupDetailModal({
     ...(canSeeSettings ? [{ key: 'ajustes' as const, label: 'Ajustes', icon: Settings }] : []),
   ];
 
-  const dayCount = series ? new Set(series.map((point) => point.day)).size : 0;
-
   const handleRemove = async () => {
     setRemoveError(null);
     try {
@@ -129,11 +127,7 @@ export function GroupDetailModal({
                 <p className="mb-3 text-xs text-coffee-400">
                   Cafeína (mg) por día de cada miembro. Tu línea aparece resaltada.
                 </p>
-                <div className="-mx-2 overflow-x-auto px-2">
-                  <div style={{ minWidth: Math.max(560, dayCount * 26) }}>
-                    <GroupDailyChart points={series} currentUserId={currentUserId} />
-                  </div>
-                </div>
+                <GroupDailyChartPanel points={series} currentUserId={currentUserId} />
               </>
             )}
           </div>

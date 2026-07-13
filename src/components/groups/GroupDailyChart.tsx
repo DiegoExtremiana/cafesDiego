@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -14,7 +13,7 @@ import { dateKeyToDate } from '@/utils/dates';
 import type { DailySeriesPoint } from '@/types/group';
 
 /** Paleta para las líneas de cada miembro (se cicla si hay más miembros). */
-const SERIES_COLORS = [
+export const SERIES_COLORS = [
   chartColors.coffee,
   chartColors.green,
   chartColors.amber,
@@ -27,35 +26,47 @@ const SERIES_COLORS = [
   '#84cc16',
 ];
 
-const dayLabelFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
-
-interface Member {
+export interface ChartMember {
   userId: string;
   name: string;
   color: string;
+  avatarUrl: string | null;
 }
+
+/** Deriva los miembros (con color estable) de la serie, en orden de aparición. */
+export function buildChartMembers(points: DailySeriesPoint[]): ChartMember[] {
+  const map = new Map<string, ChartMember>();
+  for (const point of points) {
+    if (!map.has(point.userId)) {
+      const index = map.size;
+      map.set(point.userId, {
+        userId: point.userId,
+        name: point.displayName || point.username,
+        color: SERIES_COLORS[index % SERIES_COLORS.length] ?? chartColors.coffee,
+        avatarUrl: point.avatarUrl,
+      });
+    }
+  }
+  return [...map.values()];
+}
+
+const dayLabelFormat = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
 
 interface GroupDailyChartProps {
   points: DailySeriesPoint[];
   /** Usuario actual, para resaltar su línea. */
   currentUserId: string | null;
+  /** Miembros con color; si no se pasan, se derivan de los puntos. */
+  members?: ChartMember[];
 }
 
 /** Gráfico de líneas: cafeína (mg) día a día de cada miembro del grupo. */
-export function GroupDailyChart({ points, currentUserId }: GroupDailyChartProps) {
-  const { data, members } = useMemo(() => {
-    const memberMap = new Map<string, Member>();
-    const dayMap = new Map<string, Record<string, number | string>>();
+export function GroupDailyChart({ points, currentUserId, members }: GroupDailyChartProps) {
+  const chartMembers = useMemo(() => members ?? buildChartMembers(points), [members, points]);
 
+  const data = useMemo(() => {
+    const dayMap = new Map<string, Record<string, number | string>>();
     for (const point of points) {
-      if (!memberMap.has(point.userId)) {
-        const index = memberMap.size;
-        memberMap.set(point.userId, {
-          userId: point.userId,
-          name: point.displayName || point.username,
-          color: SERIES_COLORS[index % SERIES_COLORS.length] ?? chartColors.coffee,
-        });
-      }
       let row = dayMap.get(point.day);
       if (!row) {
         row = { day: dayLabelFormat.format(dateKeyToDate(point.day)) };
@@ -63,15 +74,12 @@ export function GroupDailyChart({ points, currentUserId }: GroupDailyChartProps)
       }
       row[point.userId] = point.mg;
     }
-
-    const sortedDays = [...dayMap.keys()].sort((a, b) => a.localeCompare(b));
-    return {
-      data: sortedDays.map((key) => dayMap.get(key) as Record<string, number | string>),
-      members: [...memberMap.values()],
-    };
+    return [...dayMap.keys()]
+      .sort((a, b) => a.localeCompare(b))
+      .map((key) => dayMap.get(key) as Record<string, number | string>);
   }, [points]);
 
-  if (members.length === 0 || data.length === 0) {
+  if (chartMembers.length === 0 || data.length === 0) {
     return <p className="text-sm text-coffee-400">Aún no hay datos que comparar.</p>;
   }
 
@@ -79,7 +87,7 @@ export function GroupDailyChart({ points, currentUserId }: GroupDailyChartProps)
   const tickInterval = Math.max(0, Math.floor(data.length / 12));
 
   return (
-    <ResponsiveContainer width="100%" height={340}>
+    <ResponsiveContainer width="100%" height={320}>
       <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" vertical={false} />
         <XAxis
@@ -98,8 +106,7 @@ export function GroupDailyChart({ points, currentUserId }: GroupDailyChartProps)
           unit=" mg"
         />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} mg`, '']} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
-        {members.map((member) => {
+        {chartMembers.map((member) => {
           const isMe = member.userId === currentUserId;
           return (
             <Line

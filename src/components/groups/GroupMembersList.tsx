@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Crown, ShieldCheck, ShieldMinus, ShieldPlus, Trophy, UserMinus } from 'lucide-react';
 import { Alert } from '@/components/ui/Alert';
+import { Avatar } from '@/components/ui/Avatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getGroupRanking, kickMember, setMemberRole } from '@/services/groupService';
@@ -174,6 +175,14 @@ export function GroupMembersList({ group, currentUserId, onChanged }: GroupMembe
                   >
                     {index === 0 ? <Trophy className="mx-auto size-4" aria-hidden /> : index + 1}
                   </span>
+                  <Avatar
+                    user={{
+                      displayName: entry.displayName,
+                      username: entry.username,
+                      avatarUrl: entry.avatarUrl,
+                    }}
+                    className="size-8 text-xs"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1.5 truncate text-sm font-medium text-coffee-900">
                       {entry.displayName || entry.username}

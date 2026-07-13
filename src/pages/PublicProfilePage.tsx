@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Brand } from '@/components/layout/Brand';
+import { Avatar } from '@/components/ui/Avatar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CuriousStatsGrid } from '@/components/stats/CuriousStatsGrid';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
@@ -178,11 +179,14 @@ export default function PublicProfilePage() {
 
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 animate-fade-in">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-coffee-900">
-              {profile.displayName || profile.username}
-            </h1>
-            <p className="text-sm text-coffee-400">@{profile.username}</p>
+          <div className="flex items-center gap-3">
+            <Avatar user={profile} className="size-14 text-xl" />
+            <div>
+              <h1 className="text-2xl font-bold text-coffee-900">
+                {profile.displayName || profile.username}
+              </h1>
+              <p className="text-sm text-coffee-400">@{profile.username}</p>
+            </div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-coffee-100 px-3 py-1 text-xs font-medium text-coffee-600">
             <Eye className="size-3.5" aria-hidden />

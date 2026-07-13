@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AvailabilityHint, type AvailabilityStatus } from '@/components/ui/AvailabilityHint';
 import { WorkDaysSelector } from '@/components/settings/WorkDaysSelector';
+import { AvatarManager } from '@/components/settings/AvatarManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
 import { isUsernameAvailable } from '@/services/availabilityService';
@@ -353,6 +354,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
           <div className="flex flex-col gap-4">
+            <AvatarManager />
             <Input
               label="Nombre"
               value={displayName}

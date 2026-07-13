@@ -12,6 +12,13 @@ alter table public.group_members drop constraint if exists group_members_role_ch
 alter table public.group_members
   add constraint group_members_role_check check (role in ('owner', 'coadmin', 'member'));
 
+-- ---------- Foto de perfil ----------
+-- Columna usada por los RPCs de abajo. La gestión del bucket/almacenamiento
+-- está en 20260713_fotos_perfil.sql; aquí solo se garantiza la columna
+-- (idempotente) para que estas funciones puedan devolver avatar_url en
+-- cualquier orden de ejecución de las migraciones.
+alter table public.profiles add column if not exists avatar_url text;
+
 -- ---------- Mensajes de grupo ----------
 create table if not exists public.group_messages (
   id uuid primary key default gen_random_uuid(),
@@ -26,14 +33,15 @@ alter table public.group_messages enable row level security;
 -- Sin políticas a propósito: acceso solo por las funciones de abajo.
 
 -- ---------- Buscar usuarios (sugerencias del buscador) ----------
+drop function if exists public.search_users(text);
 create or replace function public.search_users(q text)
-returns table (id uuid, username text, display_name text, is_public boolean)
+returns table (id uuid, username text, display_name text, avatar_url text, is_public boolean)
 language sql
 security definer
 set search_path = public
 stable
 as $$
-  select p.id, p.username, p.display_name, p.is_public
+  select p.id, p.username, p.display_name, p.avatar_url, p.is_public
   from public.profiles p
   where p.id <> auth.uid()
     and length(btrim(q)) >= 1
@@ -103,6 +111,7 @@ returns table (
   user_id uuid,
   username text,
   display_name text,
+  avatar_url text,
   role text,
   today_mg bigint,
   week_mg bigint,
@@ -120,6 +129,7 @@ as $$
     p.id as user_id,
     p.username,
     p.display_name,
+    p.avatar_url,
     gm.role,
     coalesce(sum(m.mg) filter (where m.is_today), 0) as today_mg,
     coalesce(sum(m.mg) filter (where m.is_week), 0) as week_mg,
@@ -143,7 +153,7 @@ as $$
   ) m on true
   where gm.group_id = gid
     and public.is_group_member(gid, auth.uid())
-  group by p.id, p.username, p.display_name, gm.role
+  group by p.id, p.username, p.display_name, p.avatar_url, gm.role
   order by total_mg asc, p.username;
 $$;
 
@@ -151,15 +161,16 @@ $$;
 -- Cafeína (mg) por día de cada miembro. Cada miembro empieza a contar el día
 -- en que entró al grupo (joined_at): antes de esa fecha no tiene serie. El eje
 -- va desde la primera entrada (el creador) hasta hoy. Día en zona del cliente.
+drop function if exists public.group_daily_series(uuid, text);
 create or replace function public.group_daily_series(gid uuid, tz text)
-returns table (user_id uuid, username text, display_name text, day date, mg bigint)
+returns table (user_id uuid, username text, display_name text, avatar_url text, day date, mg bigint)
 language sql
 security definer
 set search_path = public
 stable
 as $$
   with members as (
-    select p.id, p.username, p.display_name,
+    select p.id, p.username, p.display_name, p.avatar_url,
       (gm.joined_at at time zone tz)::date as join_day
     from public.group_members gm
     join public.profiles p on p.id = gm.user_id
@@ -174,7 +185,7 @@ as $$
   ),
   grid as (
     -- Cada miembro solo tiene días desde que entró.
-    select m.id, m.username, m.display_name, d.day
+    select m.id, m.username, m.display_name, m.avatar_url, d.day
     from members m cross join days_list d
     where d.day >= m.join_day
   ),
@@ -193,6 +204,7 @@ as $$
     grid.id as user_id,
     grid.username,
     grid.display_name,
+    grid.avatar_url,
     grid.day,
     coalesce(agg.mg, 0)::bigint as mg
   from grid
@@ -224,12 +236,14 @@ begin
 end;
 $$;
 
+drop function if exists public.list_group_messages(uuid, int);
 create or replace function public.list_group_messages(gid uuid, lim int default 100)
 returns table (
   id uuid,
   user_id uuid,
   username text,
   display_name text,
+  avatar_url text,
   body text,
   created_at timestamptz
 )
@@ -238,7 +252,7 @@ security definer
 set search_path = public
 stable
 as $$
-  select m.id, m.user_id, p.username, p.display_name, m.body, m.created_at
+  select m.id, m.user_id, p.username, p.display_name, p.avatar_url, m.body, m.created_at
   from public.group_messages m
   join public.profiles p on p.id = m.user_id
   where m.group_id = gid and public.is_group_member(gid, auth.uid())

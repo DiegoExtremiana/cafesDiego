@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Loader2, Search } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import { searchUsers } from '@/services/groupService';
 import type { UserSearchResult } from '@/types/group';
 
@@ -144,9 +145,7 @@ export function UserAutocomplete({
                   index === active ? 'bg-coffee-50' : 'hover:bg-coffee-50'
                 }`}
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-coffee-100 text-xs font-bold uppercase text-coffee-600">
-                  {(user.displayName || user.username).slice(0, 1)}
-                </span>
+                <Avatar user={user} className="size-7 text-xs" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-coffee-900">
                     {user.displayName || user.username}

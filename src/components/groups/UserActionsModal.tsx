@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ExternalLink, UserPlus } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { Avatar } from '@/components/ui/Avatar';
 import { inviteToGroup } from '@/services/groupService';
 import type { Group, UserSearchResult } from '@/types/group';
 
@@ -52,9 +53,7 @@ export function UserActionsModal({ open, user, myGroups, onClose }: UserActionsM
     <Modal open={open} title={u.displayName || u.username} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-full bg-coffee-100 text-base font-bold uppercase text-coffee-600">
-            {(u.displayName || u.username).slice(0, 1)}
-          </span>
+          <Avatar user={u} className="size-11 text-base" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-coffee-900">
               {u.displayName || u.username}
