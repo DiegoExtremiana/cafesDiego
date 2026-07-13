@@ -98,7 +98,7 @@ export function GroupDetailModal({
   );
 
   return (
-    <Modal open={open} title={g.name} onClose={onClose} size="xl">
+    <Modal open={open} title={g.name} onClose={onClose} size={view === 'chart' ? 'xl' : 'md'}>
       <div className="flex flex-col gap-4">
         {view === 'chat' && (
           <>

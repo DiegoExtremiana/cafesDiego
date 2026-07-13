@@ -298,7 +298,7 @@ export default function PublicProfilePage() {
 
         {section === 'semana' && (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <StatCard
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
                 label="Total semana"
@@ -344,7 +344,7 @@ export default function PublicProfilePage() {
 
         {section === 'general' && (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard
                 icon={<CoffeeIcon className="size-5" aria-hidden />}
                 label="Cafeína total"

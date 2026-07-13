@@ -78,7 +78,7 @@ export function GroupMessages({ groupId, currentUserId }: GroupMessagesProps) {
 
       <div
         ref={scrollRef}
-        className="flex h-72 flex-col gap-2 overflow-y-auto rounded-xl bg-coffee-50/60 p-3"
+        className="flex h-[60vh] max-h-96 min-h-48 flex-col gap-2 overflow-y-auto rounded-xl bg-coffee-50/60 p-3 sm:min-h-64"
       >
         {messages === null ? (
           <Spinner label="Cargando mensajes…" />

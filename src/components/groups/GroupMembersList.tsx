@@ -133,7 +133,7 @@ export function GroupMembersList({
     <div className="flex flex-col gap-3">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-coffee-400">De quien menos bebe a quien más.</p>
         <div className="inline-flex rounded-xl border border-coffee-200 bg-white p-0.5">
           {METRICS.map(({ key, label }) => (

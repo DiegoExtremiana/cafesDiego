@@ -130,7 +130,7 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
         }`}
       >
         <div className="h-full overflow-y-auto">
-          <div ref={contentRef} className="p-6">
+          <div ref={contentRef} className="p-4 sm:p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-coffee-900">{title}</h2>
               <button
