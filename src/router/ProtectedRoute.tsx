@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/Spinner';
 
-/** Solo deja pasar a usuarios autenticados; si no, redirige al login. */
+/** Solo deja pasar a usuarios autenticados; si no, redirige a la landing. */
 export function ProtectedRoute() {
   const { session, loading } = useAuth();
   if (loading) {
@@ -12,7 +12,7 @@ export function ProtectedRoute() {
       </main>
     );
   }
-  return session ? <Outlet /> : <Navigate to="/login" replace />;
+  return session ? <Outlet /> : <Navigate to="/" replace />;
 }
 
 /** Solo deja pasar a visitantes; los usuarios autenticados van al panel. */
