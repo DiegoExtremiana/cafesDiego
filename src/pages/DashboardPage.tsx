@@ -21,7 +21,7 @@ import { CoffeeFormModal } from '@/components/coffee/CoffeeFormModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
 import { useNow } from '@/hooks/useNow';
-import { computeDashboardStats, coffeesOfDay } from '@/utils/stats';
+import { computeDashboardStats, computeLimitCounts, coffeesOfDay } from '@/utils/stats';
 import { formatDuration, formatTime, formatDateLong } from '@/utils/dates';
 import { drinkLabel, formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import { espressoEquivalent, type Coffee, type CoffeeDetails } from '@/types/coffee';
@@ -35,6 +35,16 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => computeDashboardStats(coffees, now), [coffees, now]);
   const todayCoffees = useMemo(() => coffeesOfDay(coffees, now), [coffees, now]);
+  // Cafeína/bebidas que cuentan para el límite (excluye cafés fuera de horario
+  // cuando el horario laboral está activo). Los totales del panel siguen
+  // mostrando el consumo real.
+  const { limitMg, limitDrinks } = useMemo(
+    () => computeLimitCounts(coffees, now, profile),
+    [coffees, now, profile],
+  );
+  const excludedMg = stats.todayMg - limitMg;
+  const excludedDrinks = stats.todayDrinks - limitDrinks;
+  const hasExcluded = excludedMg > 0 || excludedDrinks > 0;
 
   if (loading) return <Spinner label="Preparando tu panel..." />;
 
@@ -75,13 +85,13 @@ export default function DashboardPage() {
             {profile?.maxDailyCaffeine != null ? (
               profile.caffeineLimitUnit === 'cafes' ? (
                 <ProgressBar
-                  value={espressoEquivalent(stats.todayMg)}
+                  value={espressoEquivalent(limitMg)}
                   max={espressoEquivalent(profile.maxDailyCaffeine)}
                   label="Cafeína (cafés)"
                 />
               ) : (
                 <ProgressBar
-                  value={stats.todayMg}
+                  value={limitMg}
                   max={profile.maxDailyCaffeine}
                   label="Cafeína (mg)"
                 />
@@ -97,7 +107,7 @@ export default function DashboardPage() {
                 </span>
               </div>
             )}
-            {profile?.maxDailyCaffeine != null && stats.todayMg >= profile.maxDailyCaffeine && (
+            {profile?.maxDailyCaffeine != null && limitMg >= profile.maxDailyCaffeine && (
               <p className="mt-1.5 text-xs text-red-600">
                 Has alcanzado tu máximo de cafeína de hoy.
               </p>
@@ -105,11 +115,7 @@ export default function DashboardPage() {
           </div>
           <div>
             {profile?.maxDailyCoffees != null ? (
-              <ProgressBar
-                value={stats.todayDrinks}
-                max={profile.maxDailyCoffees}
-                label="Bebidas"
-              />
+              <ProgressBar value={limitDrinks} max={profile.maxDailyCoffees} label="Bebidas" />
             ) : (
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-coffee-600">
@@ -121,12 +127,27 @@ export default function DashboardPage() {
                 </span>
               </div>
             )}
-            {profile?.maxDailyCoffees != null && stats.todayDrinks >= profile.maxDailyCoffees && (
+            {profile?.maxDailyCoffees != null && limitDrinks >= profile.maxDailyCoffees && (
               <p className="mt-1.5 text-xs text-red-600">
                 Has alcanzado tu máximo recomendado de bebidas de hoy. Quizá toque descafeinado.
               </p>
             )}
           </div>
+          {profile?.workScheduleEnabled && hasExcluded && (
+            <p className="rounded-xl bg-coffee-50 px-3 py-2 text-xs text-coffee-500">
+              Fuera de tu horario laboral has registrado{' '}
+              {excludedDrinks > 0 && (
+                <span className="font-medium text-coffee-700">
+                  {formatInteger(excludedDrinks)} {drinkLabel(excludedDrinks)}
+                </span>
+              )}
+              {excludedDrinks > 0 && excludedMg > 0 && ' · '}
+              {excludedMg > 0 && (
+                <span className="font-medium text-coffee-700">{formatMg(excludedMg)}</span>
+              )}
+              . No cuentan para tu límite, pero sí en el histórico, los gráficos y los grupos.
+            </p>
+          )}
         </div>
       </Card>
 

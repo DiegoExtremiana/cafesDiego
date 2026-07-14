@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { GroupMembersList } from './GroupMembersList';
 import { GroupMessages } from './GroupMessages';
 import { GroupDailyChartPanel } from './GroupDailyChartPanel';
+import { GroupNameSection } from './GroupNameSection';
 import { deleteGroup, getGroupDailySeries, leaveGroup } from '@/services/groupService';
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import type { DailySeriesPoint, Group } from '@/types/group';
@@ -139,6 +140,8 @@ export function GroupDetailModal({
           <>
             {backButton('Volver al chat', 'chat')}
             {removeError && <Alert variant="error">{removeError}</Alert>}
+
+            <GroupNameSection group={g} onChanged={onChanged} />
 
             <section className="flex flex-col gap-2">
               <div>

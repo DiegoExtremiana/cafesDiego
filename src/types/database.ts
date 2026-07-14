@@ -12,6 +12,7 @@ export type ProfileRow = {
   work_start: string;
   work_end: string;
   work_days: number[];
+  work_schedule_enabled: boolean;
   max_daily_coffees: number | null;
   max_daily_caffeine: number | null;
   caffeine_limit_unit: string;
@@ -26,11 +27,12 @@ export type ProfileRow = {
 
 export type ProfileInsert = Omit<
   ProfileRow,
-  'created_at' | 'caffeine_limit_unit' | 'avatar_url'
+  'created_at' | 'caffeine_limit_unit' | 'avatar_url' | 'work_schedule_enabled'
 > & {
   created_at?: string;
   caffeine_limit_unit?: string;
   avatar_url?: string | null;
+  work_schedule_enabled?: boolean;
 };
 
 export type ProfileUpdate = Partial<Omit<ProfileRow, 'id' | 'created_at'>>;
@@ -208,6 +210,34 @@ export type Database = {
       };
       kick_member: {
         Args: { gid: string; target: string };
+        Returns: undefined;
+      };
+      rename_group: {
+        Args: { gid: string; new_name: string };
+        Returns: undefined;
+      };
+      propose_group_name: {
+        Args: { gid: string; new_name: string };
+        Returns: undefined;
+      };
+      my_pending_name_request: {
+        Args: { gid: string };
+        Returns: string | null;
+      };
+      list_group_name_requests: {
+        Args: { gid: string };
+        Returns: {
+          id: string;
+          requested_by: string;
+          username: string;
+          display_name: string;
+          avatar_url: string | null;
+          proposed_name: string;
+          created_at: string;
+        }[];
+      };
+      respond_group_name_request: {
+        Args: { req_id: string; approve: boolean };
         Returns: undefined;
       };
     };

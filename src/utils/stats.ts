@@ -74,6 +74,32 @@ export function coffeesOfDay(coffees: Coffee[], date: Date): Coffee[] {
 }
 
 /**
+ * Si el café cuenta para el límite diario. Con el horario laboral activo, solo
+ * cuentan los cafés tomados en un día laborable y entre la hora de entrada y la
+ * de salida; los de fuera quedan en histórico, gráficos y grupos, pero no en el
+ * límite. Sin horario activo (o sin perfil), cuentan todos.
+ */
+export function countsTowardLimit(coffee: Coffee, profile: Profile | null): boolean {
+  if (!profile?.workScheduleEnabled) return true;
+  if (!profile.workDays.includes(isoWeekday(coffee.takenAt))) return false;
+  const minutes = coffee.takenAt.getHours() * 60 + coffee.takenAt.getMinutes();
+  return (
+    minutes >= parseTimeToMinutes(profile.workStart) &&
+    minutes < parseTimeToMinutes(profile.workEnd)
+  );
+}
+
+/** Cafeína (mg) y nº de bebidas de hoy que cuentan para el límite diario. */
+export function computeLimitCounts(
+  coffees: Coffee[],
+  now: Date,
+  profile: Profile | null,
+): { limitMg: number; limitDrinks: number } {
+  const counted = coffeesOfDay(coffees, now).filter((coffee) => countsTowardLimit(coffee, profile));
+  return { limitMg: sumCaffeineMg(counted), limitDrinks: counted.length };
+}
+
+/**
  * Minutos desde medianoche del café número `position` (empezando en 1) en cada
  * día del histórico que llegó a esa posición. Captura el patrón de a qué hora
  * sueles tomar el primer, segundo, tercer... café del día.

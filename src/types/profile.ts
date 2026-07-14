@@ -12,6 +12,12 @@ export interface Profile {
   workEnd: string;
   /** Días laborables en formato ISO: 1 = lunes ... 7 = domingo. */
   workDays: number[];
+  /**
+   * Si está activo, los límites de cafeína y bebidas solo cuentan los cafés
+   * registrados dentro del horario laboral; los de fuera quedan en el
+   * histórico, gráficos y grupos pero no cuentan para el límite.
+   */
+  workScheduleEnabled: boolean;
   /** Máximo recomendado de bebidas al día; null si no está configurado. */
   maxDailyCoffees: number | null;
   /** Máximo recomendado de cafeína al día en mg; null si no está configurado. */

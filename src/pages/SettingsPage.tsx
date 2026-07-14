@@ -115,6 +115,7 @@ export default function SettingsPage() {
   const [workStart, setWorkStart] = useState('07:00');
   const [workEnd, setWorkEnd] = useState('14:00');
   const [workDays, setWorkDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [workScheduleEnabled, setWorkScheduleEnabled] = useState(false);
   const [maxCoffees, setMaxCoffees] = useState('');
   const [maxCaffeine, setMaxCaffeine] = useState('');
   const [maxCaffeineCafes, setMaxCaffeineCafes] = useState('');
@@ -152,6 +153,7 @@ export default function SettingsPage() {
     setWorkStart(profile.workStart);
     setWorkEnd(profile.workEnd);
     setWorkDays(profile.workDays);
+    setWorkScheduleEnabled(profile.workScheduleEnabled);
     setMaxCoffees(profile.maxDailyCoffees !== null ? String(profile.maxDailyCoffees) : '');
     const initialMg = profile.maxDailyCaffeine !== null ? String(profile.maxDailyCaffeine) : '';
     const initialCafes =
@@ -401,6 +403,17 @@ export default function SettingsPage() {
               />
             </div>
             <WorkDaysSelector value={workDays} onChange={setWorkDays} />
+            <div className="rounded-xl border border-coffee-100 bg-coffee-50/50 px-3">
+              <Toggle
+                checked={workScheduleEnabled}
+                onChange={(checked) => {
+                  setWorkScheduleEnabled(checked);
+                  void saveField({ workScheduleEnabled: checked });
+                }}
+                label="Aplicar límites solo en horario laboral"
+                description="Los cafés fuera de tu horario quedan en el histórico, los gráficos y los grupos, pero no cuentan para tu límite diario de cafeína ni de bebidas."
+              />
+            </div>
             <Input
               label="Máximo recomendado de bebidas al día"
               type="number"

@@ -4,6 +4,7 @@ import type {
   Group,
   GroupInvitation,
   GroupMessage,
+  GroupNameRequest,
   GroupRole,
   RankingEntry,
   UserSearchResult,
@@ -174,5 +175,51 @@ export async function listGroupMessages(groupId: string): Promise<GroupMessage[]
 
 export async function postGroupMessage(groupId: string, body: string): Promise<void> {
   const { error } = await supabase.rpc('post_group_message', { gid: groupId, body });
+  if (error) throw new Error(error.message);
+}
+
+/** Renombra el grupo al instante (solo owner/coadmin). */
+export async function renameGroup(groupId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('rename_group', { gid: groupId, new_name: name });
+  if (error) throw new Error(error.message);
+}
+
+/** Propone un nombre; si eres owner/coadmin renombra, si no deja una solicitud. */
+export async function proposeGroupName(groupId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('propose_group_name', { gid: groupId, new_name: name });
+  if (error) throw new Error(error.message);
+}
+
+/** Nombre propuesto por el usuario actual que sigue pendiente, o null. */
+export async function getMyPendingNameRequest(groupId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('my_pending_name_request', { gid: groupId });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}
+
+/** Solicitudes de cambio de nombre pendientes (solo owner/coadmin). */
+export async function listGroupNameRequests(groupId: string): Promise<GroupNameRequest[]> {
+  const { data, error } = await supabase.rpc('list_group_name_requests', { gid: groupId });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    requestedBy: row.requested_by as string,
+    username: row.username as string,
+    displayName: (row.display_name as string) ?? '',
+    avatarUrl: (row.avatar_url as string) ?? null,
+    proposedName: row.proposed_name as string,
+    createdAt: new Date(row.created_at as string),
+  }));
+}
+
+/** Aprueba (renombra) o rechaza una solicitud de cambio de nombre. */
+export async function respondGroupNameRequest(
+  requestId: string,
+  approve: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('respond_group_name_request', {
+    req_id: requestId,
+    approve,
+  });
   if (error) throw new Error(error.message);
 }

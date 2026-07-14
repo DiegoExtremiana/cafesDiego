@@ -10,6 +10,8 @@ function mapProfile(row: ProfileRow): Profile {
     workStart: row.work_start.slice(0, 5),
     workEnd: row.work_end.slice(0, 5),
     workDays: row.work_days,
+    // Tolerante a la migración pendiente: sin columna, se asume desactivado.
+    workScheduleEnabled: row.work_schedule_enabled ?? false,
     maxDailyCoffees: row.max_daily_coffees,
     maxDailyCaffeine: row.max_daily_caffeine,
     // Tolerante a la migración pendiente: sin columna, se asume el modo por defecto.
@@ -56,6 +58,8 @@ export async function updateProfile(
   if (settings.workStart !== undefined) update.work_start = settings.workStart;
   if (settings.workEnd !== undefined) update.work_end = settings.workEnd;
   if (settings.workDays !== undefined) update.work_days = settings.workDays;
+  if (settings.workScheduleEnabled !== undefined)
+    update.work_schedule_enabled = settings.workScheduleEnabled;
   if (settings.maxDailyCoffees !== undefined) update.max_daily_coffees = settings.maxDailyCoffees;
   if (settings.maxDailyCaffeine !== undefined)
     update.max_daily_caffeine = settings.maxDailyCaffeine;

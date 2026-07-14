@@ -71,6 +71,17 @@ export interface UserSearchResult {
   isPublic: boolean;
 }
 
+/** Solicitud pendiente de un miembro para cambiar el nombre del grupo. */
+export interface GroupNameRequest {
+  id: string;
+  requestedBy: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  proposedName: string;
+  createdAt: Date;
+}
+
 /** Mensaje del chat de un grupo. */
 export interface GroupMessage {
   id: string;
