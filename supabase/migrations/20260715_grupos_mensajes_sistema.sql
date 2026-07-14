@@ -131,7 +131,7 @@ as $$
   from public.profiles where id = uid;
 $$;
 
--- ---------- Aceptar/rechazar invitación (+ "ha entrado") ----------
+-- ---------- Aceptar/rechazar invitación (+ "ha entrado a «grupo»") ----------
 create or replace function public.respond_invitation(invitation_id uuid, accept boolean)
 returns void
 language plpgsql
@@ -140,6 +140,7 @@ set search_path = public
 as $$
 declare
   inv public.group_invitations;
+  gname text;
 begin
   select * into inv from public.group_invitations
   where id = invitation_id and invitee_id = auth.uid() and status = 'pending';
@@ -151,11 +152,12 @@ begin
     values (inv.group_id, auth.uid())
     on conflict do nothing;
     update public.group_invitations set status = 'accepted' where id = invitation_id;
+    select name into gname from public.groups where id = inv.group_id;
     insert into public.group_messages (group_id, user_id, body, kind)
     values (
       inv.group_id,
       auth.uid(),
-      public.display_name_of(auth.uid()) || ' ha entrado en el grupo.',
+      public.display_name_of(auth.uid()) || ' ha entrado a «' || coalesce(gname, '') || '».',
       'system'
     );
   else
