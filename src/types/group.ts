@@ -47,6 +47,8 @@ export interface DailySeriesPoint {
   displayName: string;
   avatarUrl: string | null;
   isPublic: boolean;
+  /** Índice de color estable del miembro dentro del grupo (0..N-1). */
+  colorIndex: number;
   /** Día, clave YYYY-MM-DD. */
   day: string;
   mg: number;
@@ -91,5 +93,9 @@ export interface GroupMessage {
   avatarUrl: string | null;
   isPublic: boolean;
   body: string;
+  /** 'user' = mensaje normal; 'system' = evento del grupo (entrar, salir, renombrar). */
+  kind: 'user' | 'system';
+  /** Índice de color estable del autor dentro del grupo; null si ya no es miembro. */
+  colorIndex: number | null;
   createdAt: Date;
 }

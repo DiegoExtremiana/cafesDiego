@@ -5,6 +5,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { listGroupMessages, postGroupMessage } from '@/services/groupService';
 import { useUnread } from '@/hooks/useUnread';
+import { colorForIndex } from '@/utils/groupColors';
 import { formatTime, toDateKey } from '@/utils/dates';
 import type { GroupMessage } from '@/types/group';
 
@@ -116,13 +117,27 @@ export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesP
             const mine = message.userId === currentUserId;
             const prev = messages[index - 1];
             const showDay = !prev || toDateKey(prev.createdAt) !== toDateKey(message.createdAt);
+            const dayHeader = showDay && (
+              <p className="my-1 text-center text-xs font-medium capitalize text-coffee-400">
+                {dayFormat.format(message.createdAt)}
+              </p>
+            );
+            // Eventos del grupo: línea centrada y discreta ("— texto —").
+            if (message.kind === 'system') {
+              return (
+                <div key={message.id} className="flex flex-col gap-2">
+                  {dayHeader}
+                  <div className="my-0.5 flex items-center gap-2 px-2">
+                    <span className="h-px flex-1 bg-coffee-200" aria-hidden />
+                    <span className="text-center text-[11px] text-coffee-400">{message.body}</span>
+                    <span className="h-px flex-1 bg-coffee-200" aria-hidden />
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={message.id} className="flex flex-col gap-2">
-                {showDay && (
-                  <p className="my-1 text-center text-xs font-medium capitalize text-coffee-400">
-                    {dayFormat.format(message.createdAt)}
-                  </p>
-                )}
+                {dayHeader}
                 <div className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                   {!mine && (
                     <Avatar
@@ -143,7 +158,10 @@ export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesP
                     }`}
                   >
                     {!mine && (
-                      <p className="mb-0.5 text-xs font-semibold text-coffee-500">
+                      <p
+                        className="mb-0.5 text-xs font-semibold"
+                        style={{ color: colorForIndex(message.colorIndex) }}
+                      >
                         {message.displayName || message.username}
                       </p>
                     )}

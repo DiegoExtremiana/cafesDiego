@@ -150,6 +150,7 @@ export async function getGroupDailySeries(groupId: string): Promise<DailySeriesP
     displayName: row.display_name as string,
     avatarUrl: (row.avatar_url as string) ?? null,
     isPublic: Boolean(row.is_public),
+    colorIndex: Number(row.color_index ?? 0),
     day: row.day as string,
     mg: Number(row.mg),
   }));
@@ -168,6 +169,8 @@ export async function listGroupMessages(groupId: string): Promise<GroupMessage[]
       avatarUrl: (row.avatar_url as string) ?? null,
       isPublic: Boolean(row.is_public),
       body: row.body as string,
+      kind: (row.kind === 'system' ? 'system' : 'user') as 'user' | 'system',
+      colorIndex: row.color_index == null ? null : Number(row.color_index),
       createdAt: new Date(row.created_at as string),
     }))
     .reverse();

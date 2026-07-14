@@ -10,21 +10,8 @@ import {
 } from 'recharts';
 import { axisTick, chartColors, tooltipStyle } from '@/components/charts/theme';
 import { dateKeyToDate } from '@/utils/dates';
+import { colorForIndex } from '@/utils/groupColors';
 import type { DailySeriesPoint } from '@/types/group';
-
-/** Paleta para las líneas de cada miembro (se cicla si hay más miembros). */
-export const SERIES_COLORS = [
-  chartColors.coffee,
-  chartColors.green,
-  chartColors.amber,
-  '#3b82f6',
-  chartColors.red,
-  '#a855f7',
-  '#14b8a6',
-  '#ec4899',
-  chartColors.coffeeDark,
-  '#84cc16',
-];
 
 export interface ChartMember {
   userId: string;
@@ -34,16 +21,19 @@ export interface ChartMember {
   isPublic: boolean;
 }
 
-/** Deriva los miembros (con color estable) de la serie, en orden de aparición. */
+/**
+ * Deriva los miembros de la serie con su color estable. El color viene del
+ * color_index que asigna el servidor, así coincide con el del nombre del
+ * miembro en el chat.
+ */
 export function buildChartMembers(points: DailySeriesPoint[]): ChartMember[] {
   const map = new Map<string, ChartMember>();
   for (const point of points) {
     if (!map.has(point.userId)) {
-      const index = map.size;
       map.set(point.userId, {
         userId: point.userId,
         name: point.displayName || point.username,
-        color: SERIES_COLORS[index % SERIES_COLORS.length] ?? chartColors.coffee,
+        color: colorForIndex(point.colorIndex),
         avatarUrl: point.avatarUrl,
         isPublic: point.isPublic,
       });
