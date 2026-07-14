@@ -4,18 +4,28 @@ import type { Group } from '@/types/group';
 interface GroupListItemProps {
   group: Group;
   onOpen: (group: Group) => void;
+  /** Mensajes sin leer de este grupo; 0 o ausente = sin badge. */
+  unread?: number;
 }
 
 /** Fila de la lista de grupos: nombre + tu puesto en el ranking. */
-export function GroupListItem({ group, onOpen }: GroupListItemProps) {
+export function GroupListItem({ group, onOpen, unread = 0 }: GroupListItemProps) {
   const isWinner = group.myRank === 1 && group.memberCount > 1;
 
   return (
     <button
       type="button"
       onClick={() => onOpen(group)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-coffee-200 bg-white p-4 text-left transition-colors hover:border-coffee-300 hover:bg-coffee-50/60"
+      className="relative flex w-full items-center gap-3 rounded-2xl border border-coffee-200 bg-white p-4 text-left transition-colors hover:border-coffee-300 hover:bg-coffee-50/60"
     >
+      {unread > 0 && (
+        <span
+          aria-label={`${unread} mensajes sin leer`}
+          className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold leading-none text-white shadow-sm"
+        >
+          {unread > 99 ? '99+' : unread}
+        </span>
+      )}
       <span
         className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${
           isWinner ? 'bg-emerald-100 text-emerald-600' : 'bg-coffee-100 text-coffee-600'

@@ -12,6 +12,7 @@ import {
 import { Brand } from './Brand';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnread } from '@/hooks/useUnread';
 import { countPendingInvitations } from '@/services/groupService';
 
 const navItems = [
@@ -33,7 +34,12 @@ export function AppLayout() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { total: unreadTotal } = useUnread();
   const [pendingInvites, setPendingInvites] = useState(0);
+
+  // Aviso del icono Grupos: invitaciones pendientes + mensajes sin leer.
+  const groupsBadge = pendingInvites + unreadTotal;
+  const groupsBadgeLabel = groupsBadge > 9 ? '9+' : groupsBadge;
 
   // Recuento de invitaciones pendientes para el aviso del menú; se refresca al
   // cambiar de ruta (p. ej. al volver de la página de grupos tras aceptar una).
@@ -65,14 +71,14 @@ export function AppLayout() {
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
             {navItems.map(({ to, label, icon: Icon }) => {
-              const badge = to === '/grupos' && pendingInvites > 0;
+              const badge = to === '/grupos' && groupsBadge > 0;
               return (
                 <NavLink key={to} to={to} className={({ isActive }) => navLinkClass(isActive)}>
                   <span className="relative">
                     <Icon className="size-4" aria-hidden />
                     {badge && (
-                      <span className="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                        {pendingInvites}
+                      <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                        {groupsBadgeLabel}
                       </span>
                     )}
                   </span>

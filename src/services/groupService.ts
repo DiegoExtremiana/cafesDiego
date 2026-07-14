@@ -223,3 +223,20 @@ export async function respondGroupNameRequest(
   });
   if (error) throw new Error(error.message);
 }
+
+/** Mensajes sin leer por grupo del usuario, como { groupId: nº }. */
+export async function getGroupUnreadCounts(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.rpc('group_unread_counts');
+  if (error) throw new Error(error.message);
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    counts[row.group_id as string] = Number(row.unread ?? 0);
+  }
+  return counts;
+}
+
+/** Marca un grupo como leído hasta este momento. */
+export async function markGroupRead(groupId: string): Promise<void> {
+  const { error } = await supabase.rpc('mark_group_read', { gid: groupId });
+  if (error) throw new Error(error.message);
+}

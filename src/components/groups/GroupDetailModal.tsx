@@ -11,6 +11,7 @@ import { GroupDailyChartPanel } from './GroupDailyChartPanel';
 import { GroupNameSection } from './GroupNameSection';
 import { deleteGroup, getGroupDailySeries, leaveGroup } from '@/services/groupService';
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
+import { useUnread } from '@/hooks/useUnread';
 import type { DailySeriesPoint, Group } from '@/types/group';
 
 /** Vistas navegables al estilo WhatsApp: chat → descripción → gráfico. */
@@ -44,6 +45,7 @@ export function GroupDetailModal({
   const g = group ?? lastGroup.current;
   const groupId = g?.id ?? null;
 
+  const { markRead } = useUnread();
   const [view, setView] = useState<View>('chat');
   const [series, setSeries] = useState<DailySeriesPoint[] | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
@@ -132,7 +134,11 @@ export function GroupDetailModal({
               </span>
               <ChevronRight className="size-4 shrink-0 text-coffee-300" aria-hidden />
             </button>
-            <GroupMessages groupId={g.id} currentUserId={currentUserId} />
+            <GroupMessages
+              groupId={g.id}
+              currentUserId={currentUserId}
+              onRead={() => markRead(g.id)}
+            />
           </>
         )}
 

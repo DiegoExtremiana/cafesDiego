@@ -18,27 +18,40 @@ const dayFormat = new Intl.DateTimeFormat('es-ES', {
 interface GroupMessagesProps {
   groupId: string;
   currentUserId: string | null;
+  /** Se llama al cargar mensajes (chat visible): marca el grupo como leído. */
+  onRead?: () => void;
 }
 
 /** Sección "Mensajes": chat persistente del grupo. */
-export function GroupMessages({ groupId, currentUserId }: GroupMessagesProps) {
+export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesProps) {
   const [messages, setMessages] = useState<GroupMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
+  // onRead siempre a través de ref: evita re-suscribir el sondeo cada render.
+  const onReadRef = useRef(onRead);
+  onReadRef.current = onRead;
+  // Nº de mensajes de la última carga; -1 fuerza marcar leído en la 1.ª.
+  const loadedCount = useRef(-1);
 
   const refresh = () => {
     listGroupMessages(groupId)
       .then((rows) => {
         setMessages(rows);
         setError(null);
+        // Al cargar (chat visible) o al llegar nuevos, marca el grupo leído.
+        if (rows.length !== loadedCount.current) {
+          loadedCount.current = rows.length;
+          onReadRef.current?.();
+        }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los mensajes.'));
   };
 
   useEffect(() => {
+    loadedCount.current = -1;
     refresh();
     const timer = setInterval(refresh, POLL_MS);
     return () => clearInterval(timer);

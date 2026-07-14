@@ -10,12 +10,14 @@ import { CreateGroupModal } from '@/components/groups/CreateGroupModal';
 import { GroupListItem } from '@/components/groups/GroupListItem';
 import { GroupDetailModal } from '@/components/groups/GroupDetailModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnread } from '@/hooks/useUnread';
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
 import { listMyGroups, listMyInvitations, respondInvitation } from '@/services/groupService';
 import type { Group, GroupInvitation } from '@/types/group';
 
 export default function GroupsPage() {
   const { user } = useAuth();
+  const { counts: unreadCounts, refresh: refreshUnread } = useUnread();
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +35,12 @@ export default function GroupsPage() {
       ]);
       setGroups(loadedGroups);
       setInvitations(loadedInvitations);
+      refreshUnread();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar los grupos.');
       setGroups([]);
     }
-  }, []);
+  }, [refreshUnread]);
 
   useEffect(() => {
     void load();
@@ -133,7 +136,12 @@ export default function GroupsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {groups.map((group) => (
-            <GroupListItem key={group.id} group={group} onOpen={() => setOpenGroupId(group.id)} />
+            <GroupListItem
+              key={group.id}
+              group={group}
+              unread={unreadCounts[group.id] ?? 0}
+              onOpen={() => setOpenGroupId(group.id)}
+            />
           ))}
         </div>
       )}

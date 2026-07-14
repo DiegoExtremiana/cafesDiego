@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CoffeesProvider } from '@/contexts/CoffeesContext';
+import { UnreadProvider } from '@/contexts/UnreadContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute, PublicOnlyRoute } from '@/router/ProtectedRoute';
 import { Spinner } from '@/components/ui/Spinner';
@@ -39,7 +40,9 @@ export default function App() {
               <Route
                 element={
                   <CoffeesProvider>
-                    <AppLayout />
+                    <UnreadProvider>
+                      <AppLayout />
+                    </UnreadProvider>
                   </CoffeesProvider>
                 }
               >

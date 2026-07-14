@@ -240,6 +240,14 @@ export type Database = {
         Args: { req_id: string; approve: boolean };
         Returns: undefined;
       };
+      group_unread_counts: {
+        Args: Record<PropertyKey, never>;
+        Returns: { group_id: string; unread: number }[];
+      };
+      mark_group_read: {
+        Args: { gid: string };
+        Returns: undefined;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
