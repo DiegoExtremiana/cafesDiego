@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getGroupRanking, kickMember, setMemberRole } from '@/services/groupService';
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch';
+import { useUnread } from '@/hooks/useUnread';
 import { formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import { espressoEquivalent } from '@/types/coffee';
 import type { Group, GroupRole, RankingEntry } from '@/types/group';
@@ -44,6 +45,7 @@ export function GroupMembersList({
   const [busy, setBusy] = useState(false);
   const [confirmKick, setConfirmKick] = useState<RankingEntry | null>(null);
   const reloadId = useRef(0);
+  const { subscribeGroup } = useUnread();
 
   const canModerate = group.myRole === 'owner' || group.myRole === 'coadmin';
 
@@ -60,11 +62,11 @@ export function GroupMembersList({
       });
   }, [group.id]);
 
-  // Carga inicial + sondeo periódico (el ranking depende de los cafés de otros
-  // miembros, que no llegan por realtime debido a la RLS de solo-RPC).
+  // Carga inicial + sondeo lento de respaldo (el ranking se refresca en vivo por
+  // los eventos de broadcast 'ranking'/'members' del grupo).
   useEffect(() => {
     load();
-    const timer = setInterval(load, 12000);
+    const timer = setInterval(load, 30000);
     return () => {
       reloadId.current++;
       clearInterval(timer);
@@ -72,6 +74,13 @@ export function GroupMembersList({
   }, [load]);
 
   useVisibilityRefetch(load);
+
+  // Tiempo real: recarga el ranking cuando alguien bebe o cambia la composición.
+  useEffect(() => {
+    return subscribeGroup(group.id, (kind) => {
+      if (kind === 'ranking' || kind === 'members') load();
+    });
+  }, [group.id, subscribeGroup, load]);
 
   const mgOf = (entry: RankingEntry): number =>
     metric === 'today' ? entry.todayMg : metric === 'week' ? entry.weekMg : entry.totalMg;

@@ -17,7 +17,7 @@ import type { Group, GroupInvitation } from '@/types/group';
 
 export default function GroupsPage() {
   const { user } = useAuth();
-  const { counts: unreadCounts, refresh: refreshUnread } = useUnread();
+  const { counts: unreadCounts, refresh: refreshUnread, subscribeGroup } = useUnread();
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +48,21 @@ export default function GroupsPage() {
 
   // Refresca la lista al volver a la pestaña (otro pudo invitarte, unirse, etc.).
   useVisibilityRefetch(load);
+
+  // Tiempo real: cualquier cambio en un grupo (mensaje, café, miembros, nombre)
+  // recarga la lista para actualizar puestos, nombres y contadores. Se agrupan
+  // ráfagas de eventos con un pequeño retardo.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = subscribeGroup('*', () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void load(), 400);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [subscribeGroup, load]);
 
   const handleRespond = async (invitationId: string, accept: boolean) => {
     setRespondingId(invitationId);

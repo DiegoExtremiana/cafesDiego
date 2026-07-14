@@ -45,7 +45,7 @@ export function GroupDetailModal({
   const g = group ?? lastGroup.current;
   const groupId = g?.id ?? null;
 
-  const { markRead } = useUnread();
+  const { markRead, subscribeGroup } = useUnread();
   const [view, setView] = useState<View>('chat');
   const [series, setSeries] = useState<DailySeriesPoint[] | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
@@ -80,6 +80,15 @@ export function GroupDetailModal({
       .catch(() => {});
   }, [view, groupId]);
   useVisibilityRefetch(refetchSeries);
+
+  // Tiempo real: si el gráfico está abierto, se refresca cuando un miembro bebe
+  // o cambia la composición del grupo (refetchSeries ya ignora las demás vistas).
+  useEffect(() => {
+    if (!groupId) return;
+    return subscribeGroup(groupId, (kind) => {
+      if (kind === 'ranking' || kind === 'members') refetchSeries();
+    });
+  }, [groupId, subscribeGroup, refetchSeries]);
 
   if (!g) return null;
 

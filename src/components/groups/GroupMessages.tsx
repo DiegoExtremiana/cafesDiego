@@ -4,10 +4,12 @@ import { Alert } from '@/components/ui/Alert';
 import { Avatar } from '@/components/ui/Avatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { listGroupMessages, postGroupMessage } from '@/services/groupService';
+import { useUnread } from '@/hooks/useUnread';
 import { formatTime, toDateKey } from '@/utils/dates';
 import type { GroupMessage } from '@/types/group';
 
-const POLL_MS = 8000;
+// Respaldo lento: los mensajes nuevos llegan por realtime (broadcast).
+const POLL_MS = 30000;
 
 const dayFormat = new Intl.DateTimeFormat('es-ES', {
   weekday: 'long',
@@ -24,6 +26,7 @@ interface GroupMessagesProps {
 
 /** Sección "Mensajes": chat persistente del grupo. */
 export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesProps) {
+  const { subscribeGroup } = useUnread();
   const [messages, setMessages] = useState<GroupMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [body, setBody] = useState('');
@@ -49,6 +52,8 @@ export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesP
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los mensajes.'));
   };
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
 
   useEffect(() => {
     loadedCount.current = -1;
@@ -57,6 +62,13 @@ export function GroupMessages({ groupId, currentUserId, onRead }: GroupMessagesP
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
+
+  // Tiempo real: recarga en cuanto llega un mensaje nuevo al grupo.
+  useEffect(() => {
+    return subscribeGroup(groupId, (kind) => {
+      if (kind === 'message') refreshRef.current();
+    });
+  }, [groupId, subscribeGroup]);
 
   // Baja al final cuando llegan mensajes nuevos.
   useEffect(() => {
