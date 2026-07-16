@@ -17,6 +17,10 @@ function mapProfile(row: ProfileRow): Profile {
     // Tolerante a la migración pendiente: sin columna, se asume el modo por defecto.
     caffeineLimitUnit: row.caffeine_limit_unit === 'mg' ? 'mg' : 'cafes',
     avatarUrl: row.avatar_url ?? null,
+    // Tolerante a la migración pendiente: sin columnas, cigarros desactivados.
+    cigarettesEnabled: row.cigarettes_enabled ?? false,
+    maxDailyCigarettes: row.max_daily_cigarettes ?? null,
+    showCigarettes: row.show_cigarettes ?? false,
     isPublic: row.is_public,
     showHistory: row.show_history,
     showCharts: row.show_charts,
@@ -66,6 +70,11 @@ export async function updateProfile(
   if (settings.caffeineLimitUnit !== undefined)
     update.caffeine_limit_unit = settings.caffeineLimitUnit;
   if (settings.avatarUrl !== undefined) update.avatar_url = settings.avatarUrl;
+  if (settings.cigarettesEnabled !== undefined)
+    update.cigarettes_enabled = settings.cigarettesEnabled;
+  if (settings.maxDailyCigarettes !== undefined)
+    update.max_daily_cigarettes = settings.maxDailyCigarettes;
+  if (settings.showCigarettes !== undefined) update.show_cigarettes = settings.showCigarettes;
   if (settings.isPublic !== undefined) update.is_public = settings.isPublic;
   if (settings.showHistory !== undefined) update.show_history = settings.showHistory;
   if (settings.showCharts !== undefined) update.show_charts = settings.showCharts;

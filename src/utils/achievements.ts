@@ -1,6 +1,8 @@
 /** Sistema de logros calculado en el cliente a partir del histórico. */
 import { caffeineMg, type Coffee, type CoffeeType } from '@/types/coffee';
+import type { Cigarette } from '@/types/cigarette';
 import { groupByDay } from './stats';
+import { startOfDay, toDateKey } from './dates';
 
 export type AchievementIcon =
   | 'coffee'
@@ -17,14 +19,16 @@ export type AchievementIcon =
   | 'zapoff'
   | 'leaf'
   | 'moon'
-  | 'shield';
+  | 'shield'
+  | 'cigaretteoff';
 
 /** Sección a la que pertenece el logro en la página de logros. */
-export type AchievementCategory = 'cafetero' | 'zero';
+export type AchievementCategory = 'cafetero' | 'zero' | 'tabaco';
 
 export const ACHIEVEMENT_CATEGORIES: { key: AchievementCategory; label: string }[] = [
   { key: 'cafetero', label: 'Cafetero' },
   { key: 'zero', label: '0 cafeína' },
+  { key: 'tabaco', label: 'Sin tabaco' },
 ];
 
 export interface Achievement {
@@ -55,7 +59,10 @@ type Metric =
   | 'earlyCoffees'
   | 'energyCombo'
   | 'decafDrinks'
-  | 'zeroDays';
+  | 'zeroDays'
+  | 'smokeFreeStreak'
+  | 'smokeFreeDays'
+  | 'lowSmokeDays';
 
 interface AchievementDef {
   id: string;
@@ -149,6 +156,37 @@ const DEFINITIONS: AchievementDef[] = [
   },
 ];
 
+/** Logros de tabaco: solo se calculan cuando el contador de cigarros está activo. */
+const CIGARETTE_DEFINITIONS: AchievementDef[] = [
+  {
+    id: 'smoke-free-streak',
+    title: 'Sin fumar',
+    icon: 'cigaretteoff',
+    category: 'tabaco',
+    metric: 'smokeFreeStreak',
+    tiers: [1, 3, 7, 30, 90],
+    template: 'Pasa {n} días seguidos sin fumar ni un cigarro.',
+  },
+  {
+    id: 'smoke-free-days',
+    title: 'Aire limpio',
+    icon: 'leaf',
+    category: 'tabaco',
+    metric: 'smokeFreeDays',
+    tiers: [1, 7, 30, 100],
+    template: 'Suma {n} días activos sin ningún cigarro.',
+  },
+  {
+    id: 'low-smoke-days',
+    title: 'Recortando',
+    icon: 'shield',
+    category: 'tabaco',
+    metric: 'lowSmokeDays',
+    tiers: [1, 10, 50],
+    template: 'Registra {n} días con 5 cigarros o menos.',
+  },
+];
+
 /** Resuelve un logro escalonado al nivel correspondiente al valor actual. */
 function resolve(def: AchievementDef, current: number): Achievement {
   const maxLevel = def.tiers.length;
@@ -171,7 +209,53 @@ function resolve(def: AchievementDef, current: number): Achievement {
   };
 }
 
-export function computeAchievements(coffees: Coffee[]): Achievement[] {
+/** Métricas de tabaco a partir del histórico de cigarros (y de cafés para los
+ * días activos). Ancladas al primer/último cigarro para no falsear las rachas. */
+function computeCigaretteMetrics(
+  coffees: Coffee[],
+  cigarettes: Cigarette[],
+): { smokeFreeStreak: number; smokeFreeDays: number; lowSmokeDays: number } {
+  const cigByDay = new Map<string, number>();
+  for (const cig of cigarettes) {
+    const key = toDateKey(cig.smokedAt);
+    cigByDay.set(key, (cigByDay.get(key) ?? 0) + 1);
+  }
+
+  // Racha actual sin fumar: días completos desde el último cigarro hasta hoy.
+  let smokeFreeStreak = 0;
+  const lastCig = cigarettes.at(-1);
+  if (lastCig) {
+    const dayMs = 86_400_000;
+    const diff = startOfDay(new Date()).getTime() - startOfDay(lastCig.smokedAt).getTime();
+    smokeFreeStreak = Math.max(0, Math.round(diff / dayMs));
+  }
+
+  // Días activos (con café) sin cigarros, contados solo desde que empezó a
+  // registrar cigarros (los días previos al hábito no cuentan como "limpios").
+  const firstCigKey = cigarettes[0] ? toDateKey(cigarettes[0].smokedAt) : null;
+  let smokeFreeDays = 0;
+  if (firstCigKey) {
+    const coffeeDayKeys = new Set<string>();
+    for (const coffee of coffees) coffeeDayKeys.add(toDateKey(coffee.takenAt));
+    for (const key of coffeeDayKeys) {
+      if (key >= firstCigKey && !cigByDay.get(key)) smokeFreeDays++;
+    }
+  }
+
+  // Días con pocos cigarros (entre 1 y 5): recorte del consumo.
+  let lowSmokeDays = 0;
+  for (const count of cigByDay.values()) {
+    if (count >= 1 && count <= 5) lowSmokeDays++;
+  }
+
+  return { smokeFreeStreak, smokeFreeDays, lowSmokeDays };
+}
+
+export function computeAchievements(
+  coffees: Coffee[],
+  cigarettes: Cigarette[] = [],
+  options: { includeCigarettes?: boolean } = {},
+): Achievement[] {
   const onlyCoffees = coffees.filter(isCoffee);
   const totalCoffees = onlyCoffees.length;
   const earlyCoffees = onlyCoffees.filter((coffee) => coffee.takenAt.getHours() < 7).length;
@@ -191,6 +275,8 @@ export function computeAchievements(coffees: Coffee[]): Achievement[] {
     if (group.every((coffee) => caffeineMg(coffee) === 0)) zeroDays++;
   }
 
+  const cig = computeCigaretteMetrics(coffees, cigarettes);
+
   const metrics: Record<Metric, number> = {
     coffees: totalCoffees,
     coffeeDays,
@@ -199,7 +285,14 @@ export function computeAchievements(coffees: Coffee[]): Achievement[] {
     energyCombo,
     decafDrinks,
     zeroDays,
+    smokeFreeStreak: cig.smokeFreeStreak,
+    smokeFreeDays: cig.smokeFreeDays,
+    lowSmokeDays: cig.lowSmokeDays,
   };
 
-  return DEFINITIONS.map((def) => resolve(def, metrics[def.metric]));
+  const result = DEFINITIONS.map((def) => resolve(def, metrics[def.metric]));
+  if (options.includeCigarettes) {
+    result.push(...CIGARETTE_DEFINITIONS.map((def) => resolve(def, metrics[def.metric])));
+  }
+  return result;
 }

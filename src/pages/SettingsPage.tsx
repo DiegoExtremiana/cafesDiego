@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Briefcase,
   Check,
+  Cigarette,
   Copy,
   Download,
   FileJson,
@@ -44,6 +45,7 @@ interface FieldSnapshot {
   maxCaffeine: string;
   maxCaffeineCafes: string;
   caffeineUnit: CaffeineLimitUnit;
+  maxCigarettes: string;
 }
 
 function serialize(fields: FieldSnapshot): string {
@@ -62,7 +64,12 @@ function mgToCafes(mg: number): number {
 
 function validateFields(fields: FieldSnapshot):
   | { error: string }
-  | { normalizedUsername: string; parsedMax: number | null; parsedMaxCaffeine: number | null } {
+  | {
+      normalizedUsername: string;
+      parsedMax: number | null;
+      parsedMaxCaffeine: number | null;
+      parsedMaxCigarettes: number | null;
+    } {
   const normalizedUsername = fields.username.trim().toLowerCase();
   if (!USERNAME_PATTERN.test(normalizedUsername)) {
     return {
@@ -102,7 +109,15 @@ function validateFields(fields: FieldSnapshot):
     }
     parsedMaxCaffeine = parsed;
   }
-  return { normalizedUsername, parsedMax, parsedMaxCaffeine };
+  const parsedMaxCigarettes =
+    fields.maxCigarettes.trim() === '' ? null : Number(fields.maxCigarettes);
+  if (
+    parsedMaxCigarettes !== null &&
+    (!Number.isInteger(parsedMaxCigarettes) || parsedMaxCigarettes < 1)
+  ) {
+    return { error: 'El máximo de cigarros debe ser un número entero mayor que cero.' };
+  }
+  return { normalizedUsername, parsedMax, parsedMaxCaffeine, parsedMaxCigarettes };
 }
 
 export default function SettingsPage() {
@@ -120,6 +135,9 @@ export default function SettingsPage() {
   const [maxCaffeine, setMaxCaffeine] = useState('');
   const [maxCaffeineCafes, setMaxCaffeineCafes] = useState('');
   const [caffeineUnit, setCaffeineUnit] = useState<CaffeineLimitUnit>('cafes');
+  const [cigarettesEnabled, setCigarettesEnabled] = useState(false);
+  const [maxCigarettes, setMaxCigarettes] = useState('');
+  const [showCigarettes, setShowCigarettes] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
   const [showCharts, setShowCharts] = useState(true);
@@ -161,6 +179,9 @@ export default function SettingsPage() {
     setMaxCaffeine(initialMg);
     setMaxCaffeineCafes(initialCafes);
     setCaffeineUnit(profile.caffeineLimitUnit);
+    setCigarettesEnabled(profile.cigarettesEnabled);
+    setMaxCigarettes(profile.maxDailyCigarettes !== null ? String(profile.maxDailyCigarettes) : '');
+    setShowCigarettes(profile.showCigarettes);
     setIsPublic(profile.isPublic);
     setShowHistory(profile.showHistory);
     setShowCharts(profile.showCharts);
@@ -176,6 +197,7 @@ export default function SettingsPage() {
       maxCaffeine: initialMg,
       maxCaffeineCafes: initialCafes,
       caffeineUnit: profile.caffeineLimitUnit,
+      maxCigarettes: profile.maxDailyCigarettes !== null ? String(profile.maxDailyCigarettes) : '',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
@@ -222,6 +244,7 @@ export default function SettingsPage() {
       maxCaffeine,
       maxCaffeineCafes,
       caffeineUnit,
+      maxCigarettes,
     });
     if (snapshot === snapshotRef.current) return;
 
@@ -241,6 +264,7 @@ export default function SettingsPage() {
         maxCaffeine,
         maxCaffeineCafes,
         caffeineUnit,
+        maxCigarettes,
       });
       if ('error' in result) {
         setStatus('error');
@@ -259,6 +283,7 @@ export default function SettingsPage() {
           maxDailyCoffees: result.parsedMax,
           maxDailyCaffeine: result.parsedMaxCaffeine,
           caffeineLimitUnit: caffeineUnit,
+          maxDailyCigarettes: result.parsedMaxCigarettes,
         });
         snapshotRef.current = snapshot;
         setStatus('saved');
@@ -271,7 +296,7 @@ export default function SettingsPage() {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayName, username, workStart, workEnd, workDays, maxCoffees, maxCaffeine, maxCaffeineCafes, caffeineUnit]);
+  }, [displayName, username, workStart, workEnd, workDays, maxCoffees, maxCaffeine, maxCaffeineCafes, caffeineUnit, maxCigarettes]);
 
   if (!profile) return <Spinner label="Cargando ajustes..." />;
 
@@ -488,6 +513,39 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        <Card>
+          <CardHeader
+            title="Cigarros"
+            subtitle="Cuenta también los cigarros que fumas"
+            icon={<Cigarette className="size-4" aria-hidden />}
+          />
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-coffee-100 bg-coffee-50/50 px-3">
+              <Toggle
+                checked={cigarettesEnabled}
+                onChange={(checked) => {
+                  setCigarettesEnabled(checked);
+                  void saveField({ cigarettesEnabled: checked });
+                }}
+                label="Activar contador de cigarros"
+                description="Añade un botón junto al de café, un límite diario, estadísticas y logros para animarte a dejarlo."
+              />
+            </div>
+            {cigarettesEnabled && (
+              <Input
+                label="Máximo recomendado de cigarros al día"
+                type="number"
+                min={1}
+                max={100}
+                value={maxCigarettes}
+                onChange={(event) => setMaxCigarettes(event.target.value)}
+                placeholder="Sin límite"
+                hint="Déjalo vacío si no quieres un límite. Bajarlo poco a poco es una buena meta."
+              />
+            )}
+          </div>
+        </Card>
+
         <Card className="lg:col-span-2">
           <CardHeader
             title="Perfil público"
@@ -540,6 +598,17 @@ export default function SettingsPage() {
               label="Mostrar estadísticas avanzadas"
               disabled={!isPublic}
             />
+            {cigarettesEnabled && (
+              <Toggle
+                checked={showCigarettes}
+                onChange={(checked) => {
+                  setShowCigarettes(checked);
+                  void saveField({ showCigarettes: checked });
+                }}
+                label="Mostrar cigarros"
+                disabled={!isPublic}
+              />
+            )}
             {isPublic && (
               <div className="mt-3 flex items-center gap-2 rounded-xl bg-coffee-50 px-3 py-2">
                 <code className="min-w-0 flex-1 truncate text-xs text-coffee-700">{publicUrl}</code>

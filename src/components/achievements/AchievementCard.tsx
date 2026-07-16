@@ -1,5 +1,6 @@
 import {
   CalendarCheck,
+  CigaretteOff,
   Coffee,
   Crown,
   Flame,
@@ -36,6 +37,7 @@ const icons: Record<AchievementIcon, LucideIcon> = {
   leaf: Leaf,
   moon: Moon,
   shield: Shield,
+  cigaretteoff: CigaretteOff,
 };
 
 export function AchievementCard({ achievement }: { achievement: Achievement }) {

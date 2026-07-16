@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   Check,
+  Cigarette,
   Clock,
   Coffee as CoffeeIcon,
   Eye,
@@ -32,13 +33,16 @@ import { CalendarHeatmap } from '@/components/charts/CalendarHeatmap';
 import { chartColors } from '@/components/charts/theme';
 import { getPublicProfile } from '@/services/profileService';
 import { listCoffees } from '@/services/coffeeService';
+import { listCigarettes } from '@/services/cigaretteService';
 import { coffeesOfDay, computeHistoricStats, computeTodayStats, computeWeekStats } from '@/utils/stats';
+import { computeCigaretteStats } from '@/utils/cigarettes';
 import { computeCuriousStats } from '@/utils/curiousStats';
 import { computeAchievements } from '@/utils/achievements';
 import { caffeineBreakdown, dailySeries, hourlyDistribution, monthlySeries } from '@/utils/chartData';
 import { formatDate, formatDuration, formatTime, formatWeekdayName } from '@/utils/dates';
 import { drinkLabel, formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import type { Profile } from '@/types/profile';
+import type { Cigarette as CigaretteEntry } from '@/types/cigarette';
 import { COFFEE_TYPE_LABELS, espressoEquivalent, type Coffee } from '@/types/coffee';
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'error';
@@ -57,6 +61,7 @@ export default function PublicProfilePage() {
   const [state, setState] = useState<LoadState>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [coffees, setCoffees] = useState<Coffee[]>([]);
+  const [cigarettes, setCigarettes] = useState<CigaretteEntry[]>([]);
   const [shareCopied, setShareCopied] = useState(false);
   const now = useMemo(() => new Date(), []);
 
@@ -77,9 +82,11 @@ export default function PublicProfilePage() {
           return;
         }
         const loadedCoffees = await listCoffees(loaded.id);
+        const loadedCigarettes = loaded.showCigarettes ? await listCigarettes(loaded.id) : [];
         if (!cancelled) {
           setProfile(loaded);
           setCoffees(loadedCoffees);
+          setCigarettes(loadedCigarettes);
           setState('ready');
         }
       })
@@ -92,6 +99,7 @@ export default function PublicProfilePage() {
   }, [username]);
 
   const today = useMemo(() => computeTodayStats(coffees, now), [coffees, now]);
+  const cigStats = useMemo(() => computeCigaretteStats(cigarettes, now), [cigarettes, now]);
   const todayCoffees = useMemo(() => coffeesOfDay(coffees, now), [coffees, now]);
   const todayCaffeineDrinks = useMemo(
     () => todayCoffees.filter((coffee) => coffee.hasCaffeine).length,
@@ -104,7 +112,13 @@ export default function PublicProfilePage() {
   const historicCaffeineCount = historicCaffeine.find((point) => point.key === 'caffeine')?.count ?? 0;
   const historicDecafCount = historicCaffeine.find((point) => point.key === 'decaf')?.count ?? 0;
   const curious = useMemo(() => computeCuriousStats(coffees), [coffees]);
-  const achievements = useMemo(() => computeAchievements(coffees), [coffees]);
+  const achievements = useMemo(
+    () =>
+      computeAchievements(coffees, cigarettes, {
+        includeCigarettes: profile?.showCigarettes ?? false,
+      }),
+    [coffees, cigarettes, profile],
+  );
   const daily = useMemo(() => dailySeries(coffees, now), [coffees, now]);
   const monthly = useMemo(() => monthlySeries(coffees, now), [coffees, now]);
   const hourly = useMemo(() => hourlyDistribution(coffees), [coffees]);
@@ -254,6 +268,14 @@ export default function PublicProfilePage() {
                 label="Media entre bebidas"
                 value={today.avgIntervalMinutes !== null ? formatDuration(today.avgIntervalMinutes) : '—'}
               />
+              {profile.showCigarettes && (
+                <StatCard
+                  icon={<Cigarette className="size-5" aria-hidden />}
+                  label="Cigarros hoy"
+                  value={formatInteger(cigStats.todayCount)}
+                  tone={cigStats.todayCount === 0 ? 'positive' : 'default'}
+                />
+              )}
             </div>
             {profile.showHistory &&
               (todayCoffees.length > 0 ? (
@@ -390,6 +412,14 @@ export default function PublicProfilePage() {
                 value={formatInteger(historicCaffeineCount)}
                 sub={`${formatInteger(historicDecafCount)} sin cafeína`}
               />
+              {profile.showCigarettes && (
+                <StatCard
+                  icon={<Cigarette className="size-5" aria-hidden />}
+                  label="Cigarros al día"
+                  value={cigStats.dailyAvg !== null ? formatInteger(cigStats.dailyAvg) : '—'}
+                  sub="Media por día registrado"
+                />
+              )}
             </div>
 
             {profile.showCharts && (

@@ -26,6 +26,12 @@ export interface Profile {
   caffeineLimitUnit: CaffeineLimitUnit;
   /** URL pública de la foto de perfil; null si usa el avatar por defecto. */
   avatarUrl: string | null;
+  /** Si está activo el contador de cigarros (botón, límite, estadísticas y logros). */
+  cigarettesEnabled: boolean;
+  /** Máximo recomendado de cigarros al día; null si no está configurado. */
+  maxDailyCigarettes: number | null;
+  /** Si el perfil público muestra los cigarros. */
+  showCigarettes: boolean;
   isPublic: boolean;
   showHistory: boolean;
   showCharts: boolean;

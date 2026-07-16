@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlarmClock,
+  Cigarette,
   Coffee as CoffeeIcon,
   Gauge,
   History,
@@ -18,23 +19,34 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { RegisterCoffeeButton } from '@/components/coffee/RegisterCoffeeButton';
 import { CoffeeList } from '@/components/coffee/CoffeeList';
 import { CoffeeFormModal } from '@/components/coffee/CoffeeFormModal';
+import { CigaretteList } from '@/components/cigarette/CigaretteList';
+import { CigaretteFormModal } from '@/components/cigarette/CigaretteFormModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
+import { useCigarettes } from '@/hooks/useCigarettes';
 import { useNow } from '@/hooks/useNow';
 import { computeDashboardStats, computeLimitCounts, coffeesOfDay } from '@/utils/stats';
+import { cigaretteLabel, cigarettesOfDay, computeCigaretteStats } from '@/utils/cigarettes';
 import { formatDuration, formatTime, formatDateLong } from '@/utils/dates';
 import { drinkLabel, formatEspressos, formatInteger, formatMg } from '@/utils/format';
 import { espressoEquivalent, type Coffee, type CoffeeDetails } from '@/types/coffee';
+import type { Cigarette as CigaretteEntry } from '@/types/cigarette';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { coffees, loading, error, editCoffee, updateCoffeeDetails, removeCoffee } = useCoffees();
+  const { cigarettes, editCigarette, removeCigarette } = useCigarettes();
   const now = useNow();
   const [editing, setEditing] = useState<Coffee | null>(null);
   const [deleting, setDeleting] = useState<Coffee | null>(null);
+  const [editingCig, setEditingCig] = useState<CigaretteEntry | null>(null);
+  const [deletingCig, setDeletingCig] = useState<CigaretteEntry | null>(null);
 
+  const cigarettesEnabled = profile?.cigarettesEnabled ?? false;
   const stats = useMemo(() => computeDashboardStats(coffees, now), [coffees, now]);
   const todayCoffees = useMemo(() => coffeesOfDay(coffees, now), [coffees, now]);
+  const cigStats = useMemo(() => computeCigaretteStats(cigarettes, now), [cigarettes, now]);
+  const todayCigarettes = useMemo(() => cigarettesOfDay(cigarettes, now), [cigarettes, now]);
   // Cafeína/bebidas que cuentan para el límite (excluye cafés fuera de horario
   // cuando el horario laboral está activo). Los totales del panel siguen
   // mostrando el consumo real.
@@ -133,6 +145,33 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
+          {cigarettesEnabled && (
+            <div>
+              {profile?.maxDailyCigarettes != null ? (
+                <ProgressBar
+                  value={cigStats.todayCount}
+                  max={profile.maxDailyCigarettes}
+                  label="Cigarros"
+                />
+              ) : (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-coffee-600">
+                    <Cigarette className="size-4 text-coffee-500" aria-hidden />
+                    Cigarros
+                  </span>
+                  <span className="font-semibold tabular-nums text-coffee-900">
+                    {formatInteger(cigStats.todayCount)}
+                  </span>
+                </div>
+              )}
+              {profile?.maxDailyCigarettes != null &&
+                cigStats.todayCount >= profile.maxDailyCigarettes && (
+                  <p className="mt-1.5 text-xs text-red-600">
+                    Has alcanzado tu máximo de cigarros de hoy. Cada uno que no fumes es una victoria.
+                  </p>
+                )}
+            </div>
+          )}
           {profile?.workScheduleEnabled && hasExcluded && (
             <p className="rounded-xl bg-coffee-50 px-3 py-2 text-xs text-coffee-500">
               Fuera de tu horario laboral has registrado{' '}
@@ -200,6 +239,31 @@ export default function DashboardPage() {
           sub="Según tus patrones"
           tone={nextIsPast ? 'positive' : 'default'}
         />
+        {cigarettesEnabled && (
+          <>
+            <StatCard
+              icon={<Cigarette className="size-5" aria-hidden />}
+              label="Cigarros hoy"
+              value={formatInteger(cigStats.todayCount)}
+              sub={
+                cigStats.dailyAvg !== null
+                  ? `Media ${formatInteger(cigStats.dailyAvg)}/día`
+                  : 'Todavía nada'
+              }
+              tone={cigStats.todayCount === 0 ? 'positive' : 'default'}
+            />
+            <StatCard
+              icon={<Timer className="size-5" aria-hidden />}
+              label="Desde el último cigarro"
+              value={
+                cigStats.minutesSinceLast !== null
+                  ? formatDuration(cigStats.minutesSinceLast)
+                  : '—'
+              }
+              sub={cigStats.minutesSinceLast === null ? 'Sin cigarros aún' : undefined}
+            />
+          </>
+        )}
       </div>
 
       <Card>
@@ -226,6 +290,29 @@ export default function DashboardPage() {
         />
       </Card>
 
+      {cigarettesEnabled && (
+        <Card>
+          <CardHeader
+            title="Cigarros de hoy"
+            subtitle={`${todayCigarettes.length} ${cigaretteLabel(todayCigarettes.length)}`}
+            icon={<Cigarette className="size-4" aria-hidden />}
+            actions={
+              <Link
+                to="/historial"
+                className="text-xs font-medium text-coffee-500 underline-offset-2 hover:underline"
+              >
+                Ver historial completo
+              </Link>
+            }
+          />
+          <CigaretteList
+            cigarettes={todayCigarettes}
+            onEdit={setEditingCig}
+            onDelete={setDeletingCig}
+          />
+        </Card>
+      )}
+
       <CoffeeFormModal
         open={editing !== null}
         coffee={editing}
@@ -250,6 +337,32 @@ export default function DashboardPage() {
           }
         }}
         onCancel={() => setDeleting(null)}
+      />
+
+      <CigaretteFormModal
+        open={editingCig !== null}
+        cigarette={editingCig}
+        onClose={() => setEditingCig(null)}
+        onSubmit={async (smokedAt) => {
+          if (editingCig) await editCigarette(editingCig.id, smokedAt);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deletingCig !== null}
+        title="Eliminar cigarro"
+        message={
+          deletingCig
+            ? `¿Seguro que quieres eliminar el cigarro de las ${formatTime(deletingCig.smokedAt)}?`
+            : ''
+        }
+        onConfirm={async () => {
+          if (deletingCig) {
+            await removeCigarette(deletingCig.id);
+            setDeletingCig(null);
+          }
+        }}
+        onCancel={() => setDeletingCig(null)}
       />
     </div>
   );

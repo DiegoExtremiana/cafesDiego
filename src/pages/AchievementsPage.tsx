@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, Trophy } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
+import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
+import { useCigarettes } from '@/hooks/useCigarettes';
 import {
   ACHIEVEMENT_CATEGORIES,
   computeAchievements,
@@ -10,14 +12,21 @@ import {
 } from '@/utils/achievements';
 
 export default function AchievementsPage() {
+  const { profile } = useAuth();
   const { coffees, loading } = useCoffees();
-  const achievements = useMemo(() => computeAchievements(coffees), [coffees]);
+  const { cigarettes } = useCigarettes();
+  const cigarettesEnabled = profile?.cigarettesEnabled ?? false;
+  const achievements = useMemo(
+    () => computeAchievements(coffees, cigarettes, { includeCigarettes: cigarettesEnabled }),
+    [coffees, cigarettes, cigarettesEnabled],
+  );
   // Cada nivel completado cuenta como conseguido: sumamos niveles, no logros.
   const levelsDone = achievements.reduce((sum, achievement) => sum + achievement.level, 0);
   const levelsTotal = achievements.reduce((sum, achievement) => sum + achievement.maxLevel, 0);
   const [collapsed, setCollapsed] = useState<Record<AchievementCategory, boolean>>({
     cafetero: false,
     zero: false,
+    tabaco: false,
   });
 
   if (loading) return <Spinner label="Cargando logros..." />;

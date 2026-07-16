@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
-import { Check, Coffee } from 'lucide-react';
+import { Check, Cigarette, Coffee } from 'lucide-react';
 import { useCoffees } from '@/hooks/useCoffees';
+import { useCigarettes } from '@/hooks/useCigarettes';
+import { useAuth } from '@/hooks/useAuth';
 import { CoffeeDetailsModal } from './CoffeeDetailsModal';
 import type { CoffeeDetails } from '@/types/coffee';
 
@@ -13,12 +15,32 @@ const LONG_PRESS_MS = 500;
  */
 export function RegisterCoffeeButton() {
   const { registerNow } = useCoffees();
+  const { profile } = useAuth();
+  const { registerNow: registerCigaretteNow } = useCigarettes();
+  const cigarettesEnabled = profile?.cigarettesEnabled ?? false;
   const [state, setState] = useState<'idle' | 'saving' | 'done'>('idle');
+  const [cigState, setCigState] = useState<'idle' | 'saving' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cigResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
+
+  const registerCigarette = async () => {
+    if (cigState === 'saving') return;
+    setError(null);
+    setCigState('saving');
+    try {
+      await registerCigaretteNow();
+      setCigState('done');
+      if (cigResetTimer.current) clearTimeout(cigResetTimer.current);
+      cigResetTimer.current = setTimeout(() => setCigState('idle'), 1500);
+    } catch (err) {
+      setCigState('idle');
+      setError(err instanceof Error ? err.message : 'No se pudo registrar el cigarro.');
+    }
+  };
 
   const register = async (details?: CoffeeDetails) => {
     if (state === 'saving') return;
@@ -64,6 +86,7 @@ export function RegisterCoffeeButton() {
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <div className="relative">
       <button
         type="button"
         onPointerDown={handlePointerDown}
@@ -90,6 +113,28 @@ export function RegisterCoffeeButton() {
           {state === 'done' ? 'Registrado' : state === 'saving' ? 'Guardando...' : 'Registrar café'}
         </span>
       </button>
+        {/* Botón pequeño para contar cigarros, en la esquina superior derecha. */}
+        {cigarettesEnabled && (
+          <button
+            type="button"
+            onClick={registerCigarette}
+            disabled={cigState === 'saving'}
+            aria-label="Registrar cigarro"
+            title="Registrar cigarro"
+            className={`absolute right-0 top-0 z-10 flex size-12 items-center justify-center rounded-full border shadow-md transition-all duration-200 active:scale-95 disabled:opacity-60 sm:size-14 ${
+              cigState === 'done'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
+                : 'border-coffee-200 bg-white text-coffee-700 hover:bg-coffee-50 hover:text-coffee-900'
+            }`}
+          >
+            {cigState === 'done' ? (
+              <Check className="size-6 animate-pop" aria-hidden />
+            ) : (
+              <Cigarette className="size-6" aria-hidden />
+            )}
+          </button>
+        )}
+      </div>
       <p className="text-xs text-coffee-400">Mantén pulsado para elegir tipo y cafeína</p>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <CoffeeDetailsModal

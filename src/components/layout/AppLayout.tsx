@@ -67,22 +67,33 @@ export function AppLayout() {
       <header className="sticky top-0 z-40 border-b border-coffee-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Link to="/panel" aria-label="Ir al panel" className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coffee-500">
-            <Brand />
+            <Brand showText={false} />
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
             {navItems.map(({ to, label, icon: Icon }) => {
               const badge = to === '/grupos' && groupsBadge > 0;
+              // Icono solo; el nombre aparece como tooltip al pasar el ratón o al enfocar.
               return (
-                <NavLink key={to} to={to} className={({ isActive }) => navLinkClass(isActive)}>
+                <NavLink
+                  key={to}
+                  to={to}
+                  aria-label={label}
+                  className={({ isActive }) => `group relative ${navLinkClass(isActive)}`}
+                >
                   <span className="relative">
-                    <Icon className="size-4" aria-hidden />
+                    <Icon className="size-4.5" aria-hidden />
                     {badge && (
                       <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
                         {groupsBadgeLabel}
                       </span>
                     )}
                   </span>
-                  {label}
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-coffee-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+                  >
+                    {label}
+                  </span>
                 </NavLink>
               );
             })}

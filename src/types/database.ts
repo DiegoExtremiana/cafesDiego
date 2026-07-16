@@ -17,6 +17,9 @@ export type ProfileRow = {
   max_daily_caffeine: number | null;
   caffeine_limit_unit: string;
   avatar_url: string | null;
+  cigarettes_enabled: boolean;
+  max_daily_cigarettes: number | null;
+  show_cigarettes: boolean;
   is_public: boolean;
   show_history: boolean;
   show_charts: boolean;
@@ -27,12 +30,21 @@ export type ProfileRow = {
 
 export type ProfileInsert = Omit<
   ProfileRow,
-  'created_at' | 'caffeine_limit_unit' | 'avatar_url' | 'work_schedule_enabled'
+  | 'created_at'
+  | 'caffeine_limit_unit'
+  | 'avatar_url'
+  | 'work_schedule_enabled'
+  | 'cigarettes_enabled'
+  | 'max_daily_cigarettes'
+  | 'show_cigarettes'
 > & {
   created_at?: string;
   caffeine_limit_unit?: string;
   avatar_url?: string | null;
   work_schedule_enabled?: boolean;
+  cigarettes_enabled?: boolean;
+  max_daily_cigarettes?: number | null;
+  show_cigarettes?: boolean;
 };
 
 export type ProfileUpdate = Partial<Omit<ProfileRow, 'id' | 'created_at'>>;
@@ -61,6 +73,24 @@ export type CoffeeUpdate = {
   has_caffeine?: boolean;
 };
 
+export type CigaretteRow = {
+  id: string;
+  user_id: string;
+  smoked_at: string;
+  created_at: string;
+};
+
+export type CigaretteInsert = {
+  user_id: string;
+  smoked_at: string;
+  id?: string;
+  created_at?: string;
+};
+
+export type CigaretteUpdate = {
+  smoked_at?: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -74,6 +104,12 @@ export type Database = {
         Row: CoffeeRow;
         Insert: CoffeeInsert;
         Update: CoffeeUpdate;
+        Relationships: [];
+      };
+      cigarettes: {
+        Row: CigaretteRow;
+        Insert: CigaretteInsert;
+        Update: CigaretteUpdate;
         Relationships: [];
       };
     };

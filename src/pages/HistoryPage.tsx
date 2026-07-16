@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+import { CalendarDays, ChevronLeft, ChevronRight, Cigarette, Plus } from 'lucide-react';
+import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CoffeeList } from '@/components/coffee/CoffeeList';
 import { CoffeeFormModal } from '@/components/coffee/CoffeeFormModal';
+import { CigaretteList } from '@/components/cigarette/CigaretteList';
+import { CigaretteFormModal } from '@/components/cigarette/CigaretteFormModal';
+import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
+import { useCigarettes } from '@/hooks/useCigarettes';
 import {
   addDays,
   dateInputValue,
@@ -18,19 +22,31 @@ import {
   startOfDay,
   toDateKey,
 } from '@/utils/dates';
+import { cigaretteLabel } from '@/utils/cigarettes';
 import type { Coffee, CoffeeDetails } from '@/types/coffee';
+import type { Cigarette as CigaretteEntry } from '@/types/cigarette';
 
 export default function HistoryPage() {
+  const { profile } = useAuth();
   const { coffees, loading, error, addCoffee, editCoffee, updateCoffeeDetails, removeCoffee } =
     useCoffees();
+  const { cigarettes, addCigarette, editCigarette, removeCigarette } = useCigarettes();
+  const cigarettesEnabled = profile?.cigarettesEnabled ?? false;
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Coffee | null>(null);
   const [deleting, setDeleting] = useState<Coffee | null>(null);
+  const [cigFormOpen, setCigFormOpen] = useState(false);
+  const [editingCig, setEditingCig] = useState<CigaretteEntry | null>(null);
+  const [deletingCig, setDeletingCig] = useState<CigaretteEntry | null>(null);
 
   const dayCoffees = useMemo(
     () => coffees.filter((coffee) => isSameDay(coffee.takenAt, selectedDate)),
     [coffees, selectedDate],
+  );
+  const dayCigarettes = useMemo(
+    () => cigarettes.filter((cigarette) => isSameDay(cigarette.smokedAt, selectedDate)),
+    [cigarettes, selectedDate],
   );
 
   const isToday = isSameDay(selectedDate, new Date());
@@ -62,16 +78,48 @@ export default function HistoryPage() {
     setDeleting(null);
   };
 
+  const openAddCig = () => {
+    setEditingCig(null);
+    setCigFormOpen(true);
+  };
+
+  const openEditCig = (cigarette: CigaretteEntry) => {
+    setEditingCig(cigarette);
+    setCigFormOpen(true);
+  };
+
+  const handleCigSubmit = async (smokedAt: Date) => {
+    if (editingCig) {
+      await editCigarette(editingCig.id, smokedAt);
+    } else {
+      await addCigarette(smokedAt);
+    }
+  };
+
+  const handleCigDelete = async () => {
+    if (!deletingCig) return;
+    await removeCigarette(deletingCig.id);
+    setDeletingCig(null);
+  };
+
   if (loading) return <Spinner label="Cargando historial..." />;
 
   return (
     <div className="flex flex-col gap-5 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-coffee-900">Historial</h1>
-        <Button onClick={openAdd}>
-          <Plus className="size-4" aria-hidden />
-          Añadir bebida
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={openAdd}>
+            <Plus className="size-4" aria-hidden />
+            Añadir bebida
+          </Button>
+          {cigarettesEnabled && (
+            <Button variant="secondary" onClick={openAddCig}>
+              <Cigarette className="size-4" aria-hidden />
+              Añadir cigarro
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
@@ -135,6 +183,21 @@ export default function HistoryPage() {
         />
       </Card>
 
+      {cigarettesEnabled && (
+        <Card>
+          <CardHeader
+            title="Cigarros"
+            subtitle={`${dayCigarettes.length} ${cigaretteLabel(dayCigarettes.length)}`}
+            icon={<Cigarette className="size-4" aria-hidden />}
+          />
+          <CigaretteList
+            cigarettes={dayCigarettes}
+            onEdit={openEditCig}
+            onDelete={setDeletingCig}
+          />
+        </Card>
+      )}
+
       <CoffeeFormModal
         open={formOpen}
         coffee={editing}
@@ -153,6 +216,26 @@ export default function HistoryPage() {
         }
         onConfirm={handleDelete}
         onCancel={() => setDeleting(null)}
+      />
+
+      <CigaretteFormModal
+        open={cigFormOpen}
+        cigarette={editingCig}
+        defaultDate={selectedDate}
+        onClose={() => setCigFormOpen(false)}
+        onSubmit={handleCigSubmit}
+      />
+
+      <ConfirmDialog
+        open={deletingCig !== null}
+        title="Eliminar cigarro"
+        message={
+          deletingCig
+            ? `¿Seguro que quieres eliminar el cigarro de las ${formatTime(deletingCig.smokedAt)} del ${toDateKey(deletingCig.smokedAt)}?`
+            : ''
+        }
+        onConfirm={handleCigDelete}
+        onCancel={() => setDeletingCig(null)}
       />
     </div>
   );
