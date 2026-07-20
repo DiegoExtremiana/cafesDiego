@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Contador de cafés</string>
+    <string name="title_activity_main">Contador de cafés</string>
+    <string name="package_name">es.sdi.cafesdiego</string>
+    <string name="custom_url_scheme">es.sdi.cafesdiego</string>
+</resources>
