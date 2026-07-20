@@ -11,4 +11,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// La sesión se guarda en localStorage y el token se renueva solo: la sesión
+// se mantiene hasta que el usuario cierra sesión (no expira por recargar ni
+// por cerrar la PWA). Son los valores por defecto, explícitos para blindarlos.
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
