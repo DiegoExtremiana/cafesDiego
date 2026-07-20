@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Brand } from '@/components/layout/Brand';
 import { FeatureCard } from '@/components/landing/FeatureCard';
+import { InstallButton } from '@/components/landing/InstallButton';
 
 const FEATURES = [
   {
@@ -100,6 +101,7 @@ export default function LandingPage() {
               >
                 Ya tengo cuenta
               </Link>
+              <InstallButton />
             </div>
           </div>
 
