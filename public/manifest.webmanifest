@@ -1,0 +1,31 @@
+{
+  "id": "./",
+  "name": "Contador de cafés",
+  "short_name": "Cafés",
+  "description": "Registra y analiza tu consumo de café durante la jornada laboral",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#855a35",
+  "icons": [
+    {
+      "src": "./coffee.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar café",
+      "short_name": "Café",
+      "description": "Abre la app en el botón de registro",
+      "url": "./#/panel",
+      "icons": [{ "src": "./coffee.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
