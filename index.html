@@ -20,8 +20,8 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Registro del service worker (relativo: funciona en cualquier subruta
-      // de GitHub Pages y también dentro del webview de Capacitor).
+      // Registro del service worker (ruta relativa: funciona en cualquier
+      // subruta de GitHub Pages).
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').catch(() => {});

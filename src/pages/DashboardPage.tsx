@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlarmClock,
   Cigarette,
@@ -34,22 +34,9 @@ import type { Cigarette as CigaretteEntry } from '@/types/cigarette';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
-  const { coffees, loading, error, registerNow, editCoffee, updateCoffeeDetails, removeCoffee } =
-    useCoffees();
+  const { coffees, loading, error, editCoffee, updateCoffeeDetails, removeCoffee } = useCoffees();
   const { cigarettes, editCigarette, removeCigarette } = useCigarettes();
   const now = useNow();
-
-  // Pulsador del escritorio / acceso directo PWA: al abrirse con ?registrar,
-  // registra un café con la lógica de siempre (registerNow -> misma API) y
-  // limpia el parámetro para que un refresco no lo repita.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const autoRegistered = useRef(false);
-  useEffect(() => {
-    if (autoRegistered.current || !searchParams.has('registrar')) return;
-    autoRegistered.current = true;
-    void registerNow();
-    setSearchParams({}, { replace: true });
-  }, [searchParams, setSearchParams, registerNow]);
   const [editing, setEditing] = useState<Coffee | null>(null);
   const [deleting, setDeleting] = useState<Coffee | null>(null);
   const [editingCig, setEditingCig] = useState<CigaretteEntry | null>(null);
