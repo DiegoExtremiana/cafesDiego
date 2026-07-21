@@ -5,9 +5,8 @@ import { CoffeesProvider } from '@/contexts/CoffeesContext';
 import { CigarettesProvider } from '@/contexts/CigarettesContext';
 import { UnreadProvider } from '@/contexts/UnreadContext';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ProtectedRoute, PublicOnlyRoute } from '@/router/ProtectedRoute';
+import { LandingRoute, ProtectedRoute, PublicOnlyRoute } from '@/router/ProtectedRoute';
 import { Spinner } from '@/components/ui/Spinner';
-import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
@@ -28,7 +27,7 @@ export default function App() {
       <HashRouter>
         <Suspense fallback={<Spinner label="Cargando..." />}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<LandingRoute />} />
 
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<LoginPage />} />
