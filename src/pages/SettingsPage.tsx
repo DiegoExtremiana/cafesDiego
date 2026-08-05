@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AvailabilityHint, type AvailabilityStatus } from '@/components/ui/AvailabilityHint';
 import { WorkDaysSelector } from '@/components/settings/WorkDaysSelector';
 import { AvatarManager } from '@/components/settings/AvatarManager';
+import { InstallPwaCard } from '@/components/settings/InstallPwaCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCoffees } from '@/hooks/useCoffees';
 import { isUsernameAvailable } from '@/services/availabilityService';
@@ -378,6 +379,8 @@ export default function SettingsPage() {
       {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <InstallPwaCard />
+
         <Card>
           <CardHeader title="Perfil" icon={<User className="size-4" aria-hidden />} />
           <div className="flex flex-col gap-4">

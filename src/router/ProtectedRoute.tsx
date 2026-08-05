@@ -2,15 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/Spinner';
 import LandingPage from '@/pages/LandingPage';
-
-/** true si la app corre como PWA instalada (standalone), no en pestaña normal. */
-function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    // iOS Safari usa una propiedad propietaria en lugar de display-mode.
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
+import { isStandalone } from '@/utils/pwa';
 
 /**
  * Ruta raíz. En PWA instalada, un usuario con sesión va directo al panel para

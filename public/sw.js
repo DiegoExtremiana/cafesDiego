@@ -1,7 +1,7 @@
 // Service worker mínimo de la PWA "Contador de cafés".
 // Solo cachea estáticos del propio origen. Nunca intercepta la API de
 // Supabase (otro origen) ni las escrituras, así que auth y datos no cambian.
-const CACHE = 'cafes-diego-v1';
+const CACHE = 'cafes-diego-v2';
 const APP_SHELL = ['./', './index.html', './coffee.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
