@@ -19,5 +19,11 @@ export function translateAuthError(message: string): string {
   if (normalized.includes('unable to validate email') || normalized.includes('invalid email')) {
     return 'El correo electrónico no es válido.';
   }
+  if (normalized.includes('should be different from the old password')) {
+    return 'La nueva contraseña debe ser distinta de la anterior.';
+  }
+  if (normalized.includes('auth session missing')) {
+    return 'El enlace ha caducado. Solicita uno nuevo.';
+  }
   return `Error de autenticación: ${message}`;
 }

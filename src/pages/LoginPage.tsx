@@ -52,6 +52,12 @@ export default function LoginPage() {
           autoComplete="current-password"
           required
         />
+        <Link
+          to="/recuperar"
+          className="-mt-2 self-end text-xs font-medium text-coffee-600 underline-offset-2 hover:underline"
+        >
+          ¿Has olvidado tu contraseña?
+        </Link>
         {error && <Alert variant="error">{error}</Alert>}
         <Button type="submit" size="lg" loading={submitting}>
           {!submitting && <LogIn className="size-4" aria-hidden />}

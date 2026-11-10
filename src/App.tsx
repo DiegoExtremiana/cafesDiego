@@ -6,9 +6,12 @@ import { CigarettesProvider } from '@/contexts/CigarettesContext';
 import { UnreadProvider } from '@/contexts/UnreadContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LandingRoute, ProtectedRoute, PublicOnlyRoute } from '@/router/ProtectedRoute';
+import { AuthLinkGate } from '@/router/AuthLinkGate';
 import { Spinner } from '@/components/ui/Spinner';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
@@ -25,41 +28,47 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        <Suspense fallback={<Spinner label="Cargando..." />}>
-          <Routes>
-            <Route path="/" element={<LandingRoute />} />
+        <AuthLinkGate>
+          <Suspense fallback={<Spinner label="Cargando..." />}>
+            <Routes>
+              <Route path="/" element={<LandingRoute />} />
 
-            <Route element={<PublicOnlyRoute />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/registro" element={<RegisterPage />} />
-            </Route>
-
-            <Route path="/u/:username" element={<PublicProfilePage />} />
-
-            <Route element={<ProtectedRoute />}>
-              <Route
-                element={
-                  <CoffeesProvider>
-                    <CigarettesProvider>
-                      <UnreadProvider>
-                        <AppLayout />
-                      </UnreadProvider>
-                    </CigarettesProvider>
-                  </CoffeesProvider>
-                }
-              >
-                <Route path="/panel" element={<DashboardPage />} />
-                <Route path="/historial" element={<HistoryPage />} />
-                <Route path="/estadisticas" element={<StatsPage />} />
-                <Route path="/logros" element={<AchievementsPage />} />
-                <Route path="/grupos" element={<GroupsPage />} />
-                <Route path="/ajustes" element={<SettingsPage />} />
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/registro" element={<RegisterPage />} />
+                <Route path="/recuperar" element={<ForgotPasswordPage />} />
               </Route>
-            </Route>
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+              {/* Fuera de PublicOnlyRoute: el enlace del correo ya abre una sesión. */}
+              <Route path="/restablecer" element={<ResetPasswordPage />} />
+
+              <Route path="/u/:username" element={<PublicProfilePage />} />
+
+              <Route element={<ProtectedRoute />}>
+                <Route
+                  element={
+                    <CoffeesProvider>
+                      <CigarettesProvider>
+                        <UnreadProvider>
+                          <AppLayout />
+                        </UnreadProvider>
+                      </CigarettesProvider>
+                    </CoffeesProvider>
+                  }
+                >
+                  <Route path="/panel" element={<DashboardPage />} />
+                  <Route path="/historial" element={<HistoryPage />} />
+                  <Route path="/estadisticas" element={<StatsPage />} />
+                  <Route path="/logros" element={<AchievementsPage />} />
+                  <Route path="/grupos" element={<GroupsPage />} />
+                  <Route path="/ajustes" element={<SettingsPage />} />
+                </Route>
+              </Route>
+
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </AuthLinkGate>
       </HashRouter>
     </AuthProvider>
   );

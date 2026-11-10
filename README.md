@@ -15,6 +15,7 @@ Aplicación web para registrar y analizar el consumo de café durante la jornada
 ## Funcionalidades
 
 - Registro, inicio de sesión y recuperación de sesión con Supabase Auth.
+- Recuperación de contraseña por correo: enlace de un solo uso para elegir una contraseña nueva.
 - Botón principal para registrar un café con la hora actual, además de alta manual, edición y borrado de cafés de cualquier fecha.
 - Panel con cafés de hoy, tiempo desde el último café, ritmo de consumo, media entre cafés, estimación del siguiente café y barra de progreso sobre el máximo recomendado.
 - Estadísticas de hoy, semana, mes (con comparación con el mes anterior) e histórico.
@@ -58,6 +59,7 @@ npm install
 2. Abre **SQL Editor**, pega el contenido de [`supabase/schema.sql`](supabase/schema.sql) y ejecútalo. Esto crea las tablas `profiles` y `coffees`, el trigger que genera el perfil al registrarse y todas las políticas de seguridad (RLS).
 3. En **Project Settings → API** copia la *Project URL* y la *anon/publishable key*.
 4. Opcional: en **Authentication → Sign In / Providers → Email**, desactiva *Confirm email* si no quieres exigir confirmación por correo durante el desarrollo.
+5. En **Authentication → URL Configuration → Redirect URLs** añade las direcciones donde corre la app (por ejemplo `http://localhost:5173/` y `https://<usuario>.github.io/<repositorio>/`). El enlace de recuperación de contraseña solo vuelve a URLs de esa lista; si no está, Supabase redirige a la *Site URL*.
 
 ### Variables de entorno
 

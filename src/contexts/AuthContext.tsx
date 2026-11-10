@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { openedFromRecoveryLink, supabase } from '@/lib/supabase';
 import { getProfile, updateProfile as updateProfileService } from '@/services/profileService';
 import { translateAuthError } from '@/utils/authErrors';
 import type { Profile, ProfileSettings } from '@/types/profile';
@@ -31,6 +31,10 @@ export interface AuthContextValue {
     displayName: string,
   ) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  /** true desde que se abre el enlace de recuperación hasta guardar la nueva contraseña. */
+  passwordRecovery: boolean;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   updateProfile: (settings: Partial<ProfileSettings>) => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -42,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(openedFromRecoveryLink);
 
   // Recupera la sesión guardada y escucha cambios de autenticación.
   useEffect(() => {
@@ -50,8 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => setSession(data.session))
       .finally(() => setLoading(false));
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
+      if (event === 'SIGNED_OUT') setPasswordRecovery(false);
     });
     return () => subscription.subscription.unsubscribe();
   }, []);
@@ -109,6 +116,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(translateAuthError(error.message));
   }, []);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    // Sin hash propio: Supabase vuelve con los tokens en #access_token=...
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw new Error(translateAuthError(error.message));
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new Error(translateAuthError(error.message));
+    setPasswordRecovery(false);
+  }, []);
+
   const updateProfile = useCallback(
     async (settings: Partial<ProfileSettings>) => {
       if (!userId) throw new Error('No hay sesión activa.');
@@ -133,10 +153,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      passwordRecovery,
+      requestPasswordReset,
+      updatePassword,
       updateProfile,
       deleteAccount,
     }),
-    [session, profile, loading, signIn, signUp, signOut, updateProfile, deleteAccount],
+    [
+      session,
+      profile,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      passwordRecovery,
+      requestPasswordReset,
+      updatePassword,
+      updateProfile,
+      deleteAccount,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
